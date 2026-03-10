@@ -1,0 +1,2247 @@
+openapi: 3.0.3
+info:
+  title: Local Hobbies API
+  description: API for a user-matching application based on hobbies, location, and availability.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+  - url: https://api.example.com/api
+    description: Production server
+
+tags:
+  - name: Auth
+    description: User authentication and authorization
+  - name: Users
+    description: User account, homepage, and profile management
+  - name: Hobbies
+    description: User and global hobbies
+  - name: Availabilities
+    description: User availability (schedule) management
+  - name: Matches
+    description: Match search and saved matches
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ==================== Auth ====================
+  /auth/signup:
+    post:
+      tags:
+        - Auth
+      summary: Create a new user account
+      description: Register a new user and receive JWT token with user information
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSignupRequest'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log into an existing account
+      description: Authenticate user and receive JWT token with user information
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  # ==================== Users ====================
+  /users/onboarding:
+    get:
+      tags:
+        - Users
+      summary: Get onboarding completion status
+      description: Retrieve which onboarding steps must be performed
+      responses:
+        '200':
+          description: Onboarding status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOnboardingStatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    post:
+      tags:
+        - Users
+      summary: Complete onboarding
+      description: Submit fields that are required to complete onboarding and receive JWT token with user information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserOnboardingRequest'
+      responses:
+        '200':
+          description: Onboarding completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get current user's account information
+      description: Retrieve all account details for current user
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    put:
+      tags:
+        - Users
+      summary: Update current user information
+      description: Update user's account details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: User information updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Users
+      summary: Delete current user's account
+      description: Permanently delete the current user's account
+      responses:
+        '204':
+          description: Account deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /users/profile-photo/upload-url:
+    post:
+      tags:
+        - Users
+      summary: Request profile photo upload URL
+      description: Request a presigned URL to upload a profile photo to the cloud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned URL received successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /users/homepage:
+    get:
+      tags:
+        - Users
+      summary: Get current user's homepage information
+      description: Get summary info about the user's hobbies, schedule, and matches
+      responses:
+        '200':
+          description: Homepage information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserHomepageResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get current user's profile
+      description: Get current user's profile including public account information, hobbies, and photos. Fields that are set to private are returned as null.
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /users/{userId}/profile:
+    get:
+      tags:
+        - Users
+      summary: Get another user's public profile
+      description: Get another user's profile including public account information, hobbies, and photos, and matching information. Fields that are set to private are returned as null.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtherUserProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  # ==================== Hobbies ====================
+  /hobbies:
+    get:
+      tags:
+        - Hobbies
+      summary: Get current user's hobbies
+      responses:
+        '200':
+          description: Hobbies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HobbyResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    post:
+      tags:
+        - Hobbies
+      summary: Add a hobby to current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HobbyCreationRequest'
+      responses:
+        '201':
+          description: Hobby added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HobbyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /hobbies/{hobbyId}:
+    put:
+      tags:
+        - Hobbies
+      summary: Update a hobby
+      description: Update the experience level for one of the current user's hobbies
+      parameters:
+        - name: hobbyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HobbyUpdateRequest'
+      responses:
+        '200':
+          description: Hobby experience level updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HobbyResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Hobbies
+      summary: Remove a hobby from current user's profile
+      parameters:
+        - name: hobbyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Hobby deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /hobbies/global:
+    get:
+      tags:
+        - Hobbies
+      summary: Get global hobbies
+      description: Get list of all hobbies users can select from. Hobbies are organized first by category, then by name.
+      security: []
+      responses:
+        '200':
+          description: Global hobbies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GlobalHobbyResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /hobbies/hobby-photos/upload-url:
+    post:
+      tags:
+        - Hobbies
+      summary: Request hobby photo upload URL
+      description: Request a presigned URL to upload a hobby photo to the cloud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned URL received successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /hobbies/photos:
+    get:
+      tags:
+        - Hobbies
+      summary: Get current user's hobby photos
+      responses:
+        '200':
+          description: Hobby photos retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HobbyPhotoResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    post:
+      tags:
+        - Hobbies
+      summary: Add hobby photo
+      description: Add a photo for one of the user's hobbies to the user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HobbyPhotoCreationRequest'
+      responses:
+        '201':
+          description: Hobby photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HobbyPhotoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /hobbies/hobby-photos/{photoId}:
+    put:
+      tags:
+        - Hobbies
+      summary: Update hobby photo
+      description: Update the hobby tag or the caption of a hobby photo
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HobbyPhotoUpdateRequest'
+      responses:
+        '200':
+          description: Hobby photo updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HobbyPhotoResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Hobbies
+      summary: Delete a user's hobby photo
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Hobby photo deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  # ==================== Availabilities ====================
+  /availabilities:
+    get:
+      tags:
+        - Availabilities
+      summary: Get current user's full availability schedule
+      description: Get all one-time availabilities, recurring availabilities, and recurrence exceptions
+      responses:
+        '200':
+          description: Availabilities retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /availabilities/one-time:
+    post:
+      tags:
+        - Availabilities
+      summary: Add one-time availability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OneTimeAvailabilityCreationRequest'
+      responses:
+        '201':
+          description: One-time availability created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /availabilities/one-time/{oneTimeId}:
+    put:
+      tags:
+        - Availabilities
+      summary: Update one-time availability
+      parameters:
+        - name: oneTimeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OneTimeAvailabilityUpdateRequest'
+      responses:
+        '200':
+          description: One-time availability updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Availabilities
+      summary: Delete one-time availability
+      parameters:
+        - name: oneTimeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: One-time availability deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /availabilities/recurring:
+    post:
+      tags:
+        - Availabilities
+      summary: Add recurring availability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringAvailabilityCreationRequest'
+      responses:
+        '201':
+          description: Recurring availability created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringAvailabilityResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /availabilities/recurring/{recurringId}:
+    put:
+      tags:
+        - Availabilities
+      summary: Update recurring availability
+      parameters:
+        - name: recurringId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringAvailabilityUpdateRequest'
+      responses:
+        '200':
+          description: Recurring availability updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringAvailabilityResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Availabilities
+      summary: Delete recurring availability
+      parameters:
+        - name: recurringId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Recurring availability deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /availabilities/exceptions:
+    post:
+      tags:
+        - Availabilities
+      summary: Add exception to recurring availability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityExceptionCreationRequest'
+      responses:
+        '201':
+          description: Exception added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityExceptionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /availabilities/exceptions/{exceptionId}:
+    put:
+      tags:
+        - Availabilities
+      summary: Update recurring availability exception
+      parameters:
+        - name: exceptionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityExceptionUpdateRequest'
+      responses:
+        '200':
+          description: Exception updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityExceptionResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Availabilities
+      summary: Delete recurring availability exception
+      parameters:
+        - name: exceptionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Exception deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  # ==================== Matches ====================
+  /matches/search:
+    post:
+      tags:
+        - Matches
+      summary: Search for matching users
+      description: Find users based on hobbies, location, availability, and preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchSearchRequest'
+      responses:
+        '200':
+          description: Search completed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MatchSearchResultResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /matches/saved:
+    get:
+      tags:
+        - Matches
+      summary: Get current user's saved matches
+      description: Get saved matches organized by hobby category, then hobby, then save date
+      responses:
+        '200':
+          description: Saved matches retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavedMatchResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    post:
+      tags:
+        - Matches
+      summary: Save a user as a match
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedMatchCreationRequest'
+      responses:
+        '201':
+          description: Match saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedMatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /matches/saved/{matchId}:
+    put:
+      tags:
+        - Matches
+      summary: Update saved match
+      description: Update the notes on a saved match
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedMatchUpdateRequest'
+      responses:
+        '200':
+          description: Match updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedMatchResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+    delete:
+      tags:
+        - Matches
+      summary: Delete a saved match
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Match deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+  /matches/saved/restore:
+    post:
+      tags:
+        - Matches
+      summary: Restore a recently-deleted Match
+      description: Restore a match that was deleted in the last 30 days
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedMatchRestorationRequest'
+      responses:
+        '200':
+          description: "Match restored successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedMatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        ############################################
+
+# ==================== Components ====================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login, /auth/signup, or /users/onboarding
+
+  schemas:
+    # ==================== Auth Schemas ====================
+    AuthSignupRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        username:
+          type: string
+          example: alice_smith
+        password:
+          type: string
+          example: ExamplePassword12#
+        email:
+          type: string
+          example: alice@example.com
+
+    AuthLoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: alice_smith
+        password:
+          type: string
+          example: ExamplePassword12#
+
+    AuthResponse:
+      type: object
+      required:
+        - auth
+        - user
+      description: response to successful signup, login, and onboarding
+      properties:
+        auth:
+          type: object
+          required:
+            - accesToken
+            - tokenType
+            - expirationTime
+            - refreshToken
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            tokenType:
+              type: string
+              example: Bearer
+            expirationTime:
+              type: string
+              format: date-time
+              description: ISO 8601 UTC timestamp
+              example: "2026-02-08T12:00:00Z"
+            refreshToken:
+              type: string
+              example: def502003a4b8c9d7e6f5a4b3c2d1e0f...
+        user:
+          type: object
+          required:
+            - id
+            - onboardingComplete
+          properties:
+            id:
+              type: integer
+              example: 123
+            onboardingComplete:
+              type: boolean
+              description: used to route to either homepage or onboarding page
+              example: false
+
+    # ==================== User, Homepage, & Profile Schemas ====================
+    UserOnboardingIncompleteSection:
+      type: object
+      description: section of a user's account information that is required and incomplete
+      required:
+        - name
+        - reason
+      properties:
+        name:
+          type: string
+          enum: [name, birthDate, genderMatched, location, publicContactInfo, hobbies, availabilities]
+          example: hobbies
+        reason:
+          type: string
+          enum: [noValue, minCountNotMet]
+          example: minCountNotMet
+
+    UserOnboardingStatusResponse:
+      type: object
+      required:
+        - incompleteSections
+      description: list of sections that are yet to be completed for onboarding
+      properties:
+        incompleteSections:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserOnboardingIncompleteSection'
+
+    UserOnboardingRequest:
+      type: object
+      description: request to complete onboarding; contains only fields that are being updated
+      properties:
+        name:
+          type: string
+          example: Alice Smith
+        birthDate:
+          type: string
+          format: date
+          example: "1995-05-15"
+        genderMatched:
+          type: string
+          enum: [Woman, Man, Nonbinary]
+          example: Woman
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        publicContactInfo:
+          type: string
+          example: "@asmith123 on Instagram"
+        profilePhotoUrl:
+          type: string
+          example: https://example.com/photos/123.jpg
+        hobbies:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyCreationRequest'
+        availabilities:
+          type: object
+          properties:
+            oneTime:
+              type: array
+              items:
+                $ref: '#/components/schemas/OneTimeAvailabilityCreationRequest'
+            recurring:
+              type: array
+              items:
+                $ref: '#/components/schemas/RecurringAvailabilityCreationRequest'
+            exception:
+              type: array
+              items:
+                $ref: '#/components/schemas/AvailabilityExceptionCreationRequest'
+
+    UserUpdateRequest:
+      type: object
+      description: contains only fields that are being changed
+      properties:
+        email:
+          type: string
+          example: alice@example.com
+        name:
+          type: string
+          example: Alice Smith
+        birthDate:
+          type: string
+          format: date
+          example: "1995-05-15"
+        genderDisplayed:
+          type: string
+          nullable: true
+          description: null if removed from account
+          example: Woman
+        genderMatched:
+          type: string
+          enum: [Woman, Man, Nonbinary]
+          example: Woman
+        bio:
+          type: string
+          nullable: true
+          description: null if removed from account
+          example: Love hiking and coffee!
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        publicContactInfo:
+          type: string
+          example: "@asmith123 on Instagram"
+        profilePhotoUrl:
+          type: string
+          description: omitted if not changed or if update was attempted by user but photo upload failed; null if removed from account
+          nullable: true
+          example: https://example.com/photos/123.jpg
+        showAge:
+          type: boolean
+          example: true
+        showGenderDisplayed:
+          type: boolean
+          example: true
+
+    UserResponse:
+      type: object
+      required:
+        - username
+        - email
+        - name
+        - birthDate
+        - bio
+        - location
+        - publicContactInfo
+        - profilePhotoUrl
+        - genderMatched
+        - showAge
+        - showGenderDisplayed
+      properties:
+        username:
+          type: string
+          example: alice_smith
+        email:
+          type: string
+          example: alice@example.com
+        name:
+          type: string
+          example: Alice Smith
+        birthDate:
+          type: string
+          format: date
+          example: "1995-05-15"
+        genderDisplayed:
+          type: string
+          example: Woman
+        bio:
+          type: string
+          example: Love hiking and coffee!
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        publicContactInfo:
+          type: string
+          example: "@asmith123 on Instagram"
+        profilePhotoUrl:
+          type: string
+          example: https://example.com/photos/123.jpg
+        genderMatched:
+          type: string
+          enum: [Woman, Man, Nonbinary]
+          example: Woman
+        showAge:
+          type: boolean
+          example: true
+        showGenderDisplayed:
+          type: boolean
+          example: true
+
+    UserHomepageResponse:
+      type: object
+      required:
+        - user
+        - hobbySummary
+        - availabilitySummary
+        - matchSummary
+      properties:
+      user:
+        type: object
+        required:
+          - id
+          - name
+          - profilePhotoUrl
+        properties:
+          id:
+            type: integer
+            example: 123
+          name:
+            type: string
+            example: Alice Smith
+          profilePhotoUrl:
+            type: string
+            example: https://example.com/photos/123.jpg
+      hobbySummary:
+        type: object
+        required:
+          - count
+        properties:
+          count:
+            type: integer
+            example: 5
+      availabilitySummary:
+        type: object
+        required:
+          - nextAvailability
+        properties:
+          nextAvailability: #change to booked meetup once implemented
+            $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+      matchSummary:
+        type: object
+        required:
+          - count
+        properties:
+          count:
+            type: integer
+            example: 13
+
+    CurrentUserProfileResponse:
+      type: object
+      required:
+        - name
+        - age
+        - genderDisplayed
+        - bio
+        - locationApproximate
+        - publicContactInfo
+        - profilePhotoUrl
+        - hobbies
+        - hobbyPhotos
+      properties:
+      name:
+        type: string
+        example: Alice Smith
+      age:
+        type: integer
+        nullable: true
+        description: null if showAge is false
+        example: 29
+      genderDisplayed:
+        type: string
+        nullable: true
+        description: null if showGenderDisplayed is false
+        example: Woman
+      bio:
+        type: string
+        example: Love hiking and coffee!
+      locationApproximate:
+        type: string
+        example: San Francisco, CA
+      publicContactInfo:
+        type: string
+        example: "@asmith123 on Instagram"
+      profilePhotoUrl:
+        type: string
+        example: https://example.com/photos/123.jpg
+      hobbies:
+        type: array
+        items:
+          $ref: '#/components/schemas/HobbyResponse'
+      hobbyPhotos:
+        type: array
+        items:
+          $ref: '#/components/schemas/HobbyPhotoResponse'
+
+    OtherUserProfileResponse:
+      type: object
+      required:
+        - id
+        - name
+        - age
+        - genderDisplayed
+        - bio
+        - locationApproximate
+        - publicContactInfo
+        - profilePhotoUrl
+        - lastSessionTime
+        - hobbies
+        - hobbyPhotos
+        - isSavedMatch
+        - overlappingHobbies
+        - overlappingAvailabilities
+      properties:
+      id:
+        type: integer
+        example: 123
+      name:
+        type: string
+        example: Alice Smith
+      age:
+        type: integer
+        nullable: true
+        description: null if showAge is false
+        example: 29
+      genderDisplayed:
+        type: string
+        nullable: true
+        description: null if showGenderDisplayed is false
+        example: Woman
+      bio:
+        type: string
+        example: Love hiking and coffee!
+      locationApproximate:
+        type: string
+        example: San Francisco, CA
+      publicContactInfo:
+        type: string
+        example: "@asmith123 on Instagram"
+      profilePhotoUrl:
+        type: string
+        example: https://example.com/photos/123/profile.jpg
+      lastSessionTime:
+        type: string
+        format: date-time
+        description: ISO 8601 UTC timestamp
+        example: "2026-02-08T12:00:00Z"
+      hobbies:
+        type: array
+        items:
+          $ref: '#/components/schemas/HobbyResponse'
+      hobbyPhotos:
+        type: array
+        items:
+          $ref: '#/components/schemas/HobbyPhotoResponse'
+      isSavedMatch:
+        type: boolean
+        example: true
+      overlappingHobbies:
+        type: array
+        items:
+          $ref: '#/components/schemas/HobbyOverlapResponse'
+      overlappingAvailabilities:
+        type: array
+        items:
+          $ref: '#/components/schemas/AvailabilityOverlapResponse'
+
+    # ==================== Hobby Schemas ====================
+    HobbyCreationRequest:
+      type: object
+      required:
+        - name
+        - experienceLevel
+      properties:
+        name:
+          type: string
+          example: Hiking
+        experienceLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          example: Intermediate
+
+    HobbyUpdateRequest:
+      type: object
+      required:
+        - experienceLevel
+      properties:
+        experienceLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          example: Advanced
+
+    HobbyResponse:
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - experienceLevel
+      properties:
+        id:
+          type: integer
+          example: 49
+        name:
+          type: string
+          example: Hiking
+        category:
+          type: string
+          example: Fitness
+        experienceLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          example: Intermediate
+
+    HobbyPhotoCreationRequest:
+      type: object
+      required:
+        - hobby
+        - photoUrl
+        - caption
+      properties:
+        hobby:
+          type: string
+          example: Hiking
+        photoUrl:
+          type: string
+          example: https://example.com/photos/123/hobby135.jpg
+        caption:
+          type: string
+          example: Had a great time!
+
+    HobbyPhotoUpdateRequest:
+      type: object
+      description: only contains changed fields
+      properties:
+        hobby:
+          type: string
+          description: should only be changed if current value is incorrect
+          example: Hiking
+        caption:
+          type: string
+          example: Had a great time!
+
+    HobbyPhotoResponse:
+      type: object
+      required:
+        - id
+        - hobby
+        - photoUrl
+        - caption
+      properties:
+        id:
+          type: integer
+          example: 335
+        hobby:
+          type: string
+          example: Hiking
+        photoUrl:
+          type: string
+          example: https://example.com/photos/123/hobby135.jpg
+        caption:
+          type: string
+          example: Had a great time!
+
+    GlobalHobbyResponse:
+      type: object
+      required:
+        - name
+        - category
+      properties:
+        name:
+          type: string
+          example: Hiking
+        category:
+          type: string
+          example: Fitness
+
+    HobbyOverlapResponse:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Hiking
+
+    # ==================== Availability Schemas ====================
+    OneTimeAvailabilityCreationRequest:
+      type: object
+      required:
+        - location
+        - startDate
+        - startTime
+        - duration
+      properties:
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        startDate:
+          type: string
+          format: date
+          example: "2026-03-15"
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT3H
+
+    OneTimeAvailabilityUpdateRequest:
+      type: object
+      properties:
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        startDate:
+          type: string
+          format: date
+          example: "2026-03-15"
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT3H
+
+    RecurringAvailabilityCreationRequest:
+      type: object
+      required:
+        - location
+        - ruleStart
+        - ruleEnd
+        - frequency
+        - startDayOfWeek
+        - startDayOfMonth
+        - startTime
+        - duration
+      properties:
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        ruleStart:
+          type: string
+          format: date
+          example: "2026-01-01"
+        ruleEnd:
+          type: string
+          format: date
+          nullable: true
+          description: null if rule continues indefinitely
+          example: "2026-12-31"
+        frequency:
+          type: string
+          enum: [Weekly, Every two weeks, Monthly]
+          example: Weekly
+        startDayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          nullable: true
+          description: 0=Sunday, 6=Saturday (for weekly/every two weeks); null if startDayOfMonth is not null
+        startDayOfMonth:
+          type: integer
+          minimum: 1
+          maximum: 31
+          nullable: true
+          description: day of month (for monthly); null if startDayOfWeek is not null
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT2H
+
+    RecurringAvailabilityUpdateRequest:
+      type: object
+      properties:
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        ruleStart:
+          type: string
+          format: date
+          example: "2026-01-01"
+        ruleEnd:
+          type: string
+          format: date
+          nullable: true
+          description: null if rule continues indefinitely
+          example: "2026-12-31"
+        frequency:
+          type: string
+          enum: [Weekly, Every two weeks, Monthly]
+          example: Weekly
+        startDayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          nullable: true
+          description: 0=Sunday, 6=Saturday (for weekly/every two weeks); null if startDayOfMonth is not null
+        startDayOfMonth:
+          type: integer
+          minimum: 1
+          maximum: 31
+          nullable: true
+          description: day of month (for monthly); null if startDayOfWeek is not null
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT2H
+
+    AvailabilityExceptionCreationRequest:
+      type: object
+      required:
+        - recurringAvailabilityId
+        - exceptionDate
+        - exceptionReason
+        - isCancelled
+        - overrideLocation
+        - overrideStartTime
+        - overrideDuration
+      properties:
+        recurringAvailabilityId:
+          type: integer
+        exceptionDate:
+          type: string
+          format: date
+          example: "2026-03-04"
+        exceptionReason:
+          type: string
+          example: Traveling
+        isCancelled:
+          type: boolean
+        overrideLocation:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        overrideStartTime:
+          type: string
+          format: time
+        overrideDuration:
+          type: string
+          description: ISO 8601 duration
+
+    AvailabilityExceptionUpdateRequest:
+      type: object
+      properties:
+        recurringAvailabilityId:
+          type: integer
+        exceptionDate:
+          type: string
+          format: date
+          example: "2026-03-04"
+        exceptionReason:
+          type: string
+          example: Traveling
+        isCancelled:
+          type: boolean
+        overrideLocation:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        overrideStartTime:
+          type: string
+          format: time
+        overrideDuration:
+          type: string
+          description: ISO 8601 duration
+
+    AvailabilityListResponse:
+      type: object
+      required:
+        - oneTime
+        - recurring
+        - exception
+      properties:
+        oneTime:
+          type: array
+          items:
+            $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+        recurring:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringAvailabilityResponse'
+        exception:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityExceptionResponse'
+
+    OneTimeAvailabilityResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - location
+        - startDate
+        - startTime
+        - duration
+      properties:
+        id:
+          type: integer
+          example: 41
+        userId:
+          type: integer
+          example: 123
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        startDate:
+          type: string
+          format: date
+          example: "2026-03-15"
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT3H
+
+    RecurringAvailabilityResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - location
+        - ruleStart
+        - ruleEnd
+        - frequency
+        - startDayOfWeek
+        - startDayOfMonth
+        - startTime
+        - duration
+      properties:
+        id:
+          type: integer
+          example: 41
+        userId:
+          type: integer
+          example: 123
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        ruleStart:
+          type: string
+          format: date
+          example: "2026-01-01"
+        ruleEnd:
+          type: string
+          format: date
+          nullable: true
+          description: null if rule continues indefinitely
+          example: "2026-12-31"
+        frequency:
+          type: string
+          enum: [Weekly, Every two weeks, Monthly]
+          example: Weekly
+        startDayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          nullable: true
+          description: 0=Sunday, 6=Saturday (for weekly/every two weeks); null if startDayOfMonth is not null
+        startDayOfMonth:
+          type: integer
+          minimum: 1
+          maximum: 31
+          nullable: true
+          description: day of month (for monthly); null if startDayOfWeek is not null
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT2H
+
+    AvailabilityExceptionResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - recurringAvailabilityId
+        - exceptionDate
+        - exceptionReason
+        - isCancelled
+        - overrideLocation
+        - overrideStartTime
+        - overrideDuration
+      properties:
+        id:
+          type: integer
+          example: 529
+        userId:
+          type: integer
+          example: 123
+        recurringAvailabilityId:
+          type: integer
+          example: 76
+        exceptionDate:
+          type: string
+          format: date
+          example: "2026-02-04"
+        exceptionReason:
+          type: string
+          example: Traveling
+        isCancelled:
+          type: boolean
+        overrideLocation:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        overrideStartTime:
+          type: string
+          format: time
+          example: "16:00"
+        overrideDuration:
+          type: string
+          description: ISO 8601 duration
+          example: PT3H
+
+    AvailabilityOverlapResponse:
+      type: object
+      required:
+        - participants
+        - location
+        - startDate
+        - startTime
+        - duration
+      properties:
+        participants:
+          type: array
+          items:
+            type: object
+            required:
+              - userId
+              - availabilityId
+            properties:
+              userId:
+                type: integer
+                example: 123
+              availabilityId:
+                type: integer
+                example: 529
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        startDate:
+          type: string
+          format: date
+          example: "2026-03-15"
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT3H
+
+    # ==================== Match Schemas ====================
+    MatchSearchRequest:
+      type: object
+      required:
+        - hobby
+        - radiusKilometers
+        - minimumOverlapMinutes
+        - filters
+        - hardFilters
+        - softFilters
+      properties:
+        hobby:
+          type: string
+          description: one of current user's hobbies
+          example: Hiking
+        radiusKilometers:
+          type: integer
+          minimum: 0
+        minimumOverlapMinutes:
+          type: integer
+          minimum: 0
+        filters:
+          type: object
+          properties:
+            gender:
+              type: array
+              items:
+                type: string
+                enum: [Man, Woman, Nonbinary]
+            minAge:
+              type: integer
+              minimum: 13
+            maxAge:
+              type: integer
+              maximum: 120
+            groupSize:
+              type: integer
+              minimum: 2
+              maximum: 5
+            experienceLevel:
+              type: string
+              enum: [Beginner, Intermediate, Advanced]
+            availabilityType:
+              type: string
+              enum: [One-time, Recurring]
+        hardFilters:
+          type: array
+          items:
+            type: string
+          description: filters that the user asserts must be satisfied
+          example: ["gender", "minAge"]
+        softFilters:
+          type: array
+          items:
+            type: string
+          description: filters used for prioritizing results
+          example: ["experienceLevel"]
+
+    MatchSearchResultResponse:
+      type: object
+      required:
+        - matchedUserId
+        - name
+        - profilePhotoUrl
+        - hobby
+        - distance
+        - overlappingAvailabilities
+        - lastSessionTime
+      properties:
+        matchedUserId:
+          type: integer
+          example: 123
+        name:
+          type: string
+          example: Alice Smith
+        profilePhotoUrl:
+          type: string
+          example: https://example.com/photos/123/profile.jpg
+        hobby:
+          type: string
+          example: Hiking
+        distance:
+          type: number
+          format: double
+          description: distance in kilometers
+          example: 4.3
+        overlappingAvailabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityOverlapResponse'
+        lastSessionTime:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp
+          example: "2026-02-08T12:00:00Z"
+
+    SavedMatchCreationRequest:
+      type: object
+      required:
+        - savedUserId
+        - hobby
+        - notes
+      properties:
+        savedUserId:
+          type: integer
+          example: 123
+        hobby:
+          type: string
+          example: Hiking
+        notes:
+          type: string
+          example: Brings her dog on hikes
+
+    SavedMatchUpdateRequest:
+      type: object
+      required:
+        - notes
+      properties:
+        notes:
+          type: string
+          example: Brings her dog Max on hikes
+
+    SavedMatchRestorationRequest:
+      type: object
+      required:
+        - savedUserId
+        - hobby
+      properties:
+        savedUserId:
+          type: integer
+          example: 123
+        hobby:
+          type: string
+          example: Hiking
+
+    SavedMatchResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - savedUser
+        - hobby
+        - notes
+        - creationTime
+      properties:
+      id:
+        type: integer
+        example: 5
+      userId:
+        type: integer
+        example: 80
+      savedUser:
+        type: object
+        required:
+          - id
+          - name
+          - profilePhotoUrl
+          - lastSessionTime
+        properties:
+          id:
+            type: integer
+            example: 123
+          name:
+            type: string
+            example: Alice Smith
+          profilePhotoUrl:
+            type: string
+            example: https://example.com/photos/123/profile.jpg
+          lastSessionTime:
+            type: string
+            format: date-time
+            description: ISO 8601 UTC timestamp
+            example: "2026-02-08T12:00:00Z"
+      hobby:
+        type: string
+        example: Hiking
+      notes:
+        type: string
+        example: Brings her dog on hikes
+      creationTime:
+        type: string
+        format: date-time
+        description: ISO 8601 UTC timestamp
+        example: "2026-01-20T15:00:00Z"
+
+    # ==================== Location Schemas ====================
+    GeoJsonPoint:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum: [Point]
+          description: GeoJSON point geometry type
+        coordinates:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: number
+          example: [-73.935242, 40.730610]
+          description: "[longitude, latitude] format"
+
+    # ==================== Cloud Upload Schemas ====================
+    #have different API requests for profile photo upload and hobby photo upload
+    #e.g. POST users/profile-photo/upload-url
+    #then
+    #POST/PUT users/profile-photo
+    UploadUrlRequest:
+      type: object
+      description: request for presigned URL to upload file to cloud storage
+      required:
+        - fileName
+        - contentType
+      properties:
+        fileName:
+          type: string
+          example: "vacation_hiking.jpg"
+        contentType:
+          type: string
+          example: "image/jpeg"
+
+    UploadUrlResponse:
+      type: object
+      required:
+        - fileId
+        - uploadUrl
+        - expirationTime
+      properties:
+        fileId:
+          type: string
+          format: uuid
+        uploadUrl:
+          type: string
+          format: uri
+          description: cloud storage URL for image binary save request
+        expirationTime:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp
+          example: "2026-02-08T12:00:00Z"
+
+    # ==================== Error Schemas ====================
+    GlobalError:
+      type: object
+      required:
+        - errorCode
+        - errorMessage
+        - timestamp
+        - path
+      properties:
+        errorCode:
+          type: string
+          example: RESOURCE_NOT_FOUND
+        errorMessage:
+          type: string
+          example: The requested hobby was not found.
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: "/api/hobbies/Hiking"
+
+  responses:
+    # ==================== Error Responses ====================
+    BadRequestError: #400
+      description: "The request was invalid or cannot be served."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GlobalError'
+
+    UnauthorizedError: #401
+      description: "Authentication is required or has failed."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GlobalError'
+
+    ForbiddenError: #403
+      description: "Insufficient permissions to access this resource."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GlobalError'
+
+    NotFoundError: #404
+      description: "The requested resource could not be found."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GlobalError'
+
+    ConflictError: #409
+      description: "The request could not be completed due to a conflict with the current state of the resource."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GlobalError'
+
+    InternalServerError: #500
+      description: "An unexpected error occurred on the server."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GlobalError'
