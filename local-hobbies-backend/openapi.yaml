@@ -77,7 +77,6 @@ paths:
           $ref: '#/components/responses/BadRequestError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   # ==================== Users ====================
   /users/onboarding:
@@ -92,7 +91,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserOnboardingStatusResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserOnboardingIncompleteSection'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -101,7 +102,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     post:
       tags:
@@ -129,7 +129,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /users:
     get:
@@ -152,7 +151,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     put:
       tags:
@@ -178,7 +176,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -196,7 +193,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /users/profile-photo/upload-url:
     post:
@@ -225,7 +221,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /users/homepage:
     get:
@@ -248,7 +243,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /users/profile:
     get:
@@ -271,16 +265,15 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
-  /users/{userId}/profile:
+  /users/{otherUserId}/profile:
     get:
       tags:
         - Users
       summary: Get another user's public profile
       description: Get another user's profile including public account information, hobbies, and photos, and matching information. Fields that are set to private are returned as null.
       parameters:
-        - name: userId
+        - name: otherUserId
           in: path
           required: true
           schema:
@@ -300,7 +293,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   # ==================== Hobbies ====================
   /hobbies:
@@ -325,7 +317,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     post:
       tags:
@@ -354,7 +345,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /hobbies/{hobbyId}:
     put:
@@ -387,7 +377,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -410,7 +399,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /hobbies/global:
     get:
@@ -432,7 +420,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /hobbies/hobby-photos/upload-url:
     post:
@@ -461,7 +448,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /hobbies/photos:
     get:
@@ -485,7 +471,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     post:
       tags:
@@ -515,7 +500,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /hobbies/hobby-photos/{photoId}:
     put:
@@ -548,7 +532,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -571,7 +554,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   # ==================== Availabilities ====================
   /availabilities:
@@ -595,7 +577,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /availabilities/one-time:
     post:
@@ -625,7 +606,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /availabilities/one-time/{oneTimeId}:
     put:
@@ -657,7 +637,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -680,7 +659,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /availabilities/recurring:
     post:
@@ -710,7 +688,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /availabilities/recurring/{recurringId}:
     put:
@@ -742,7 +719,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -765,7 +741,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /availabilities/exceptions:
     post:
@@ -795,7 +770,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /availabilities/exceptions/{exceptionId}:
     put:
@@ -827,7 +801,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -850,7 +823,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   # ==================== Matches ====================
   /matches/search:
@@ -882,7 +854,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /matches/saved:
     get:
@@ -907,7 +878,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     post:
       tags:
@@ -936,7 +906,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /matches/saved/{matchId}:
     put:
@@ -969,7 +938,6 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
     delete:
       tags:
@@ -992,7 +960,6 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
   /matches/saved/restore:
     post:
@@ -1023,7 +990,6 @@ paths:
           $ref: '#/components/responses/ConflictError'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        ############################################
 
 # ==================== Components ====================
 components:
@@ -1126,16 +1092,16 @@ components:
           enum: [noValue, minCountNotMet]
           example: minCountNotMet
 
-    UserOnboardingStatusResponse:
-      type: object
-      required:
-        - incompleteSections
-      description: list of sections that are yet to be completed for onboarding
-      properties:
-        incompleteSections:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserOnboardingIncompleteSection'
+#    UserOnboardingStatusResponse:
+#      type: object
+#      required:
+#        - incompleteSections
+#      description: list of sections that are yet to be completed for onboarding
+#      properties:
+#        incompleteSections:
+#          type: array
+#          items:
+#            $ref: '#/components/schemas/UserOnboardingIncompleteSection'
 
     UserOnboardingRequest:
       type: object
@@ -1157,9 +1123,6 @@ components:
         publicContactInfo:
           type: string
           example: "@asmith123 on Instagram"
-        profilePhotoUrl:
-          type: string
-          example: https://example.com/photos/123.jpg
         hobbies:
           type: array
           items:
@@ -1197,7 +1160,7 @@ components:
         genderDisplayed:
           type: string
           nullable: true
-          description: null if removed from account
+          description: null if being removed from account
           example: Woman
         genderMatched:
           type: string
@@ -1206,7 +1169,7 @@ components:
         bio:
           type: string
           nullable: true
-          description: null if removed from account
+          description: null if being removed from account
           example: Love hiking and coffee!
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
@@ -1215,7 +1178,7 @@ components:
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
           type: string
-          description: omitted if not changed or if update was attempted by user but photo upload failed; null if removed from account
+          description: omitted if not changed or if update was attempted by user but photo upload failed; null if being removed from account
           nullable: true
           example: https://example.com/photos/123.jpg
         showAge:
@@ -1255,9 +1218,11 @@ components:
           example: "1995-05-15"
         genderDisplayed:
           type: string
+          nullable: true
           example: Woman
         bio:
           type: string
+          nullable: true
           example: Love hiking and coffee!
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
@@ -1266,6 +1231,7 @@ components:
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
           type: string
+          nullable: true
           example: https://example.com/photos/123.jpg
         genderMatched:
           type: string
@@ -1286,45 +1252,46 @@ components:
         - availabilitySummary
         - matchSummary
       properties:
-      user:
-        type: object
-        required:
-          - id
-          - name
-          - profilePhotoUrl
-        properties:
-          id:
-            type: integer
-            example: 123
-          name:
-            type: string
-            example: Alice Smith
-          profilePhotoUrl:
-            type: string
-            example: https://example.com/photos/123.jpg
-      hobbySummary:
-        type: object
-        required:
-          - count
-        properties:
-          count:
-            type: integer
-            example: 5
-      availabilitySummary:
-        type: object
-        required:
-          - nextAvailability
-        properties:
-          nextAvailability: #change to booked meetup once implemented
-            $ref: '#/components/schemas/OneTimeAvailabilityResponse'
-      matchSummary:
-        type: object
-        required:
-          - count
-        properties:
-          count:
-            type: integer
-            example: 13
+        user:
+          type: object
+          required:
+            - id
+            - name
+            - profilePhotoUrl
+          properties:
+            id:
+              type: integer
+              example: 123
+            name:
+              type: string
+              example: Alice Smith
+            profilePhotoUrl:
+              type: string
+              nullable: true
+              example: https://example.com/photos/123.jpg
+        hobbySummary:
+          type: object
+          required:
+            - count
+          properties:
+            count:
+              type: integer
+              example: 5
+        availabilitySummary:
+          type: object
+          required:
+            - nextAvailability
+          properties:
+            nextAvailability: #change to booked meetup once implemented
+              $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+        matchSummary:
+          type: object
+          required:
+            - count
+          properties:
+            count:
+              type: integer
+              example: 13
 
     CurrentUserProfileResponse:
       type: object
@@ -1339,39 +1306,41 @@ components:
         - hobbies
         - hobbyPhotos
       properties:
-      name:
-        type: string
-        example: Alice Smith
-      age:
-        type: integer
-        nullable: true
-        description: null if showAge is false
-        example: 29
-      genderDisplayed:
-        type: string
-        nullable: true
-        description: null if showGenderDisplayed is false
-        example: Woman
-      bio:
-        type: string
-        example: Love hiking and coffee!
-      locationApproximate:
-        type: string
-        example: San Francisco, CA
-      publicContactInfo:
-        type: string
-        example: "@asmith123 on Instagram"
-      profilePhotoUrl:
-        type: string
-        example: https://example.com/photos/123.jpg
-      hobbies:
-        type: array
-        items:
-          $ref: '#/components/schemas/HobbyResponse'
-      hobbyPhotos:
-        type: array
-        items:
-          $ref: '#/components/schemas/HobbyPhotoResponse'
+        name:
+          type: string
+          example: Alice Smith
+        age:
+          type: integer
+          nullable: true
+          description: null if showAge is false
+          example: 29
+        genderDisplayed:
+          type: string
+          nullable: true
+          description: null if not set or if showGenderDisplayed is false
+          example: Woman
+        bio:
+          type: string
+          nullable: true
+          example: Love hiking and coffee!
+        locationApproximate:
+          type: string
+          example: San Francisco, CA
+        publicContactInfo:
+          type: string
+          example: "@asmith123 on Instagram"
+        profilePhotoUrl:
+          type: string
+          nullable: true
+          example: https://example.com/photos/123.jpg
+        hobbies:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyResponse'
+        hobbyPhotos:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyPhotoResponse'
 
     OtherUserProfileResponse:
       type: object
@@ -1391,58 +1360,59 @@ components:
         - overlappingHobbies
         - overlappingAvailabilities
       properties:
-      id:
-        type: integer
-        example: 123
-      name:
-        type: string
-        example: Alice Smith
-      age:
-        type: integer
-        nullable: true
-        description: null if showAge is false
-        example: 29
-      genderDisplayed:
-        type: string
-        nullable: true
-        description: null if showGenderDisplayed is false
-        example: Woman
-      bio:
-        type: string
-        example: Love hiking and coffee!
-      locationApproximate:
-        type: string
-        example: San Francisco, CA
-      publicContactInfo:
-        type: string
-        example: "@asmith123 on Instagram"
-      profilePhotoUrl:
-        type: string
-        example: https://example.com/photos/123/profile.jpg
-      lastSessionTime:
-        type: string
-        format: date-time
-        description: ISO 8601 UTC timestamp
-        example: "2026-02-08T12:00:00Z"
-      hobbies:
-        type: array
-        items:
-          $ref: '#/components/schemas/HobbyResponse'
-      hobbyPhotos:
-        type: array
-        items:
-          $ref: '#/components/schemas/HobbyPhotoResponse'
-      isSavedMatch:
-        type: boolean
-        example: true
-      overlappingHobbies:
-        type: array
-        items:
-          $ref: '#/components/schemas/HobbyOverlapResponse'
-      overlappingAvailabilities:
-        type: array
-        items:
-          $ref: '#/components/schemas/AvailabilityOverlapResponse'
+        id:
+          type: integer
+          example: 123
+        name:
+          type: string
+          example: Alice Smith
+        age:
+          type: integer
+          nullable: true
+          description: null if showAge is false
+          example: 29
+        genderDisplayed:
+          type: string
+          nullable: true
+          description: null if not set or if showGenderDisplayed is false
+          example: Woman
+        bio:
+          type: string
+          nullable: true
+          example: Love hiking and coffee!
+        locationApproximate:
+          type: string
+          example: San Francisco, CA
+        publicContactInfo:
+          type: string
+          example: "@asmith123 on Instagram"
+        profilePhotoUrl:
+          type: string
+          example: https://example.com/photos/123/profile.jpg
+        lastSessionTime:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp
+          example: "2026-02-08T12:00:00Z"
+        hobbies:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyResponse'
+        hobbyPhotos:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyPhotoResponse'
+        isSavedMatch:
+          type: boolean
+          example: true
+        overlappingHobbies:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyOverlapResponse'
+        overlappingAvailabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityOverlapResponse'
 
     # ==================== Hobby Schemas ====================
     HobbyCreationRequest:
@@ -1496,7 +1466,6 @@ components:
       required:
         - hobby
         - photoUrl
-        - caption
       properties:
         hobby:
           type: string
@@ -1518,6 +1487,7 @@ components:
           example: Hiking
         caption:
           type: string
+          nullable: true
           example: Had a great time!
 
     HobbyPhotoResponse:
@@ -1539,6 +1509,7 @@ components:
           example: https://example.com/photos/123/hobby135.jpg
         caption:
           type: string
+          nullable: true
           example: Had a great time!
 
     GlobalHobbyResponse:
@@ -1605,15 +1576,43 @@ components:
           description: ISO 8601 duration
           example: PT3H
 
+    OneTimeAvailabilityResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - location
+        - startDate
+        - startTime
+        - duration
+      properties:
+        id:
+          type: integer
+          example: 41
+        userId:
+          type: integer
+          example: 123
+        location:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        startDate:
+          type: string
+          format: date
+          example: "2026-03-15"
+        startTime:
+          type: string
+          format: time
+          example: "14:00"
+        duration:
+          type: string
+          description: ISO 8601 duration
+          example: PT3H
+
     RecurringAvailabilityCreationRequest:
       type: object
       required:
         - location
         - ruleStart
-        - ruleEnd
         - frequency
-        - startDayOfWeek
-        - startDayOfMonth
         - startTime
         - duration
       properties:
@@ -1626,8 +1625,7 @@ components:
         ruleEnd:
           type: string
           format: date
-          nullable: true
-          description: null if rule continues indefinitely
+          description: omitted if rule continues indefinitely
           example: "2026-12-31"
         frequency:
           type: string
@@ -1637,14 +1635,12 @@ components:
           type: integer
           minimum: 0
           maximum: 6
-          nullable: true
-          description: 0=Sunday, 6=Saturday (for weekly/every two weeks); null if startDayOfMonth is not null
+          description: 0=Sunday, 6=Saturday (for weekly/every two weeks); omitted if startDayOfMonth is submitted
         startDayOfMonth:
           type: integer
           minimum: 1
           maximum: 31
-          nullable: true
-          description: day of month (for monthly); null if startDayOfWeek is not null
+          description: day of month (for monthly); omitted if startDayOfWeek is submitted
         startTime:
           type: string
           format: time
@@ -1693,111 +1689,6 @@ components:
           type: string
           description: ISO 8601 duration
           example: PT2H
-
-    AvailabilityExceptionCreationRequest:
-      type: object
-      required:
-        - recurringAvailabilityId
-        - exceptionDate
-        - exceptionReason
-        - isCancelled
-        - overrideLocation
-        - overrideStartTime
-        - overrideDuration
-      properties:
-        recurringAvailabilityId:
-          type: integer
-        exceptionDate:
-          type: string
-          format: date
-          example: "2026-03-04"
-        exceptionReason:
-          type: string
-          example: Traveling
-        isCancelled:
-          type: boolean
-        overrideLocation:
-          $ref: '#/components/schemas/GeoJsonPoint'
-        overrideStartTime:
-          type: string
-          format: time
-        overrideDuration:
-          type: string
-          description: ISO 8601 duration
-
-    AvailabilityExceptionUpdateRequest:
-      type: object
-      properties:
-        recurringAvailabilityId:
-          type: integer
-        exceptionDate:
-          type: string
-          format: date
-          example: "2026-03-04"
-        exceptionReason:
-          type: string
-          example: Traveling
-        isCancelled:
-          type: boolean
-        overrideLocation:
-          $ref: '#/components/schemas/GeoJsonPoint'
-        overrideStartTime:
-          type: string
-          format: time
-        overrideDuration:
-          type: string
-          description: ISO 8601 duration
-
-    AvailabilityListResponse:
-      type: object
-      required:
-        - oneTime
-        - recurring
-        - exception
-      properties:
-        oneTime:
-          type: array
-          items:
-            $ref: '#/components/schemas/OneTimeAvailabilityResponse'
-        recurring:
-          type: array
-          items:
-            $ref: '#/components/schemas/RecurringAvailabilityResponse'
-        exception:
-          type: array
-          items:
-            $ref: '#/components/schemas/AvailabilityExceptionResponse'
-
-    OneTimeAvailabilityResponse:
-      type: object
-      required:
-        - id
-        - userId
-        - location
-        - startDate
-        - startTime
-        - duration
-      properties:
-        id:
-          type: integer
-          example: 41
-        userId:
-          type: integer
-          example: 123
-        location:
-          $ref: '#/components/schemas/GeoJsonPoint'
-        startDate:
-          type: string
-          format: date
-          example: "2026-03-15"
-        startTime:
-          type: string
-          format: time
-          example: "14:00"
-        duration:
-          type: string
-          description: ISO 8601 duration
-          example: PT3H
 
     RecurringAvailabilityResponse:
       type: object
@@ -1856,6 +1747,63 @@ components:
           description: ISO 8601 duration
           example: PT2H
 
+    AvailabilityExceptionCreationRequest:
+      type: object
+      required:
+        - recurringAvailabilityId
+        - exceptionDate
+        - exceptionReason
+        - isCancelled
+      properties:
+        recurringAvailabilityId:
+          type: integer
+        exceptionDate:
+          type: string
+          format: date
+          example: "2026-03-04"
+        exceptionReason:
+          type: string
+          example: Traveling
+        isCancelled:
+          type: boolean
+        overrideLocation:
+          description: omitted if isCancelled = true
+          allOf:
+            - $ref: '#/components/schemas/GeoJsonPoint'
+        overrideStartTime:
+          type: string
+          format: time
+          description: omitted if isCancelled = true
+        overrideDuration:
+          type: string
+          description: ISO 8601 duration; omitted if isCancelled = true
+
+    AvailabilityExceptionUpdateRequest:
+      type: object
+      properties:
+        recurringAvailabilityId:
+          type: integer
+        exceptionDate:
+          type: string
+          format: date
+          example: "2026-03-04"
+        exceptionReason:
+          type: string
+          example: Traveling
+        isCancelled:
+          type: boolean
+        overrideLocation:
+          description: null if isCancelled = true
+          allOf:
+          - $ref: '#/components/schemas/GeoJsonPoint'
+        overrideStartTime:
+          type: string
+          format: time
+          description: null if isCancelled = true
+        overrideDuration:
+          type: string
+          description: ISO 8601 duration; null if isCancelled = true
+
     AvailabilityExceptionResponse:
       type: object
       required:
@@ -1888,15 +1836,62 @@ components:
         isCancelled:
           type: boolean
         overrideLocation:
-          $ref: '#/components/schemas/GeoJsonPoint'
+          nullable: true
+          description: null if isCancelled = true
+          allOf:
+            - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
+          nullable: true
+          description: null if isCancelled = true
           example: "16:00"
         overrideDuration:
           type: string
-          description: ISO 8601 duration
+          nullable: true
+          description: ISO 8601 duration; null if isCancelled = true
           example: PT3H
+
+    AvailabilityCreationListRequest:
+      type: object
+      description: used during onboarding
+      required:
+        - oneTime
+        - recurring
+        - exceptions
+      properties:
+        oneTime:
+          type: array
+          items:
+            $ref: '#/components/schemas/OneTimeAvailabilityCreationRequest'
+        recurring:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringAvailabilityCreationRequest'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityExceptionCreationRequest'
+
+    AvailabilityListResponse:
+      type: object
+      required:
+        - oneTime
+        - recurring
+        - exceptions
+      properties:
+        oneTime:
+          type: array
+          items:
+            $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+        recurring:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringAvailabilityResponse'
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityExceptionResponse'
 
     AvailabilityOverlapResponse:
       type: object
@@ -1937,6 +1932,30 @@ components:
           example: PT3H
 
     # ==================== Match Schemas ====================
+    MatchedUser:
+      type: object
+      required:
+        - id
+        - name
+        - profilePhotoUrl
+        - lastSessionTime
+      properties:
+        id:
+          type: integer
+          example: 123
+        name:
+          type: string
+          example: Alice Smith
+        profilePhotoUrl:
+          type: string
+          nullable: true
+          example: https://example.com/photos/123/profile.jpg
+        lastSessionTime:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp
+          example: "2026-02-08T12:00:00Z"
+
     MatchSearchRequest:
       type: object
       required:
@@ -1960,7 +1979,7 @@ components:
         filters:
           type: object
           properties:
-            gender:
+            genders:
               type: array
               items:
                 type: string
@@ -1985,59 +2004,42 @@ components:
           type: array
           items:
             type: string
-          description: filters that the user asserts must be satisfied
-          example: ["gender", "minAge"]
+          description: filters that the user asserts must be satisfied; must be a subset of the filters that were passed; cannot overlap with soft filters
+          example: ["genders", "minAge"]
         softFilters:
           type: array
           items:
             type: string
-          description: filters used for prioritizing results
+          description: filters used for prioritizing results; must be a subset of the filters that were passed; cannot overlap with soft filters
           example: ["experienceLevel"]
 
     MatchSearchResultResponse:
       type: object
       required:
-        - matchedUserId
-        - name
-        - profilePhotoUrl
+        - matchedUser
         - hobby
-        - distance
+        - distanceKilometers
         - overlappingAvailabilities
-        - lastSessionTime
       properties:
-        matchedUserId:
-          type: integer
-          example: 123
-        name:
-          type: string
-          example: Alice Smith
-        profilePhotoUrl:
-          type: string
-          example: https://example.com/photos/123/profile.jpg
+        matchedUser:
+          $ref: '#/components/schemas/MatchedUser'
         hobby:
           type: string
           example: Hiking
-        distance:
+        distanceKilometers:
           type: number
           format: double
-          description: distance in kilometers
           example: 4.3
         overlappingAvailabilities:
           type: array
           items:
             $ref: '#/components/schemas/AvailabilityOverlapResponse'
-        lastSessionTime:
-          type: string
-          format: date-time
-          description: ISO 8601 UTC timestamp
-          example: "2026-02-08T12:00:00Z"
 
     SavedMatchCreationRequest:
       type: object
       required:
         - savedUserId
         - hobby
-        - notes
       properties:
         savedUserId:
           type: integer
@@ -2081,54 +2083,35 @@ components:
         - notes
         - creationTime
       properties:
-      id:
-        type: integer
-        example: 5
-      userId:
-        type: integer
-        example: 80
-      savedUser:
-        type: object
-        required:
-          - id
-          - name
-          - profilePhotoUrl
-          - lastSessionTime
-        properties:
-          id:
-            type: integer
-            example: 123
-          name:
-            type: string
-            example: Alice Smith
-          profilePhotoUrl:
-            type: string
-            example: https://example.com/photos/123/profile.jpg
-          lastSessionTime:
-            type: string
-            format: date-time
-            description: ISO 8601 UTC timestamp
-            example: "2026-02-08T12:00:00Z"
-      hobby:
-        type: string
-        example: Hiking
-      notes:
-        type: string
-        example: Brings her dog on hikes
-      creationTime:
-        type: string
-        format: date-time
-        description: ISO 8601 UTC timestamp
-        example: "2026-01-20T15:00:00Z"
+        id:
+          type: integer
+          example: 5
+        userId:
+          type: integer
+          example: 80
+        savedUser:
+          $ref: '#/components/schemas/MatchedUser'
+        hobby:
+          type: string
+          example: Hiking
+        notes:
+          type: string
+          nullable: true
+          example: Brings her dog on hikes
+        creationTime:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp
+          example: "2026-01-20T15:00:00Z"
 
     # ==================== Location Schemas ====================
     GeoJsonPoint:
       type: object
       required:
-        - type
+        - geometryType
         - coordinates
       properties:
-        type:
+        geometryType:
           type: string
           enum: [Point]
           description: GeoJSON point geometry type
@@ -2142,10 +2125,6 @@ components:
           description: "[longitude, latitude] format"
 
     # ==================== Cloud Upload Schemas ====================
-    #have different API requests for profile photo upload and hobby photo upload
-    #e.g. POST users/profile-photo/upload-url
-    #then
-    #POST/PUT users/profile-photo
     UploadUrlRequest:
       type: object
       description: request for presigned URL to upload file to cloud storage
@@ -2187,7 +2166,7 @@ components:
         - errorCode
         - errorMessage
         - timestamp
-        - path
+        - endpointURI
       properties:
         errorCode:
           type: string
@@ -2198,7 +2177,7 @@ components:
         timestamp:
           type: string
           format: date-time
-        path:
+        endpointURI:
           type: string
           example: "/api/hobbies/Hiking"
 
