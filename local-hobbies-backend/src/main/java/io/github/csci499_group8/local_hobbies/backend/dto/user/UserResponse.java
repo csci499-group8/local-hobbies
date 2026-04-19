@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.user;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.common.GeoJsonPoint;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.UserGenderMatched;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +19,7 @@ public record UserResponse(
     @Valid @NotNull GeoJsonPoint location,
     @NotBlank String publicContactInfo,
     String profilePhotoUrl,
-    @NotNull GenderMatched genderMatched,
+    @NotNull UserGenderMatched genderMatched,
     @NotNull boolean showAge,
     @NotNull boolean showGenderDisplayed
 ) {}

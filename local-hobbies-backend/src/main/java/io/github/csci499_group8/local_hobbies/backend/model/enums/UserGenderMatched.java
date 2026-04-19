@@ -1,8 +1,8 @@
-package io.github.csci499_group8.local_hobbies.backend.dto.user;
+package io.github.csci499_group8.local_hobbies.backend.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public enum GenderMatched {
+public enum UserGenderMatched {
     @JsonProperty("Man") MAN,
     @JsonProperty("Nonbinary") NONBINARY,
     @JsonProperty("Woman") WOMAN

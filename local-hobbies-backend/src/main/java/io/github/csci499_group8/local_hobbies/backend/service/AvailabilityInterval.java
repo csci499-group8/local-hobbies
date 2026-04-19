@@ -1,6 +1,6 @@
 package io.github.csci499_group8.local_hobbies.backend.service;
 
-import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityType;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityType;
 import jakarta.validation.constraints.NotNull;
 import org.locationtech.jts.geom.Point;
 

@@ -8,7 +8,9 @@ import java.util.List;
 
 @Repository
 public interface OneTimeAvailabilityRepository extends JpaRepository<OneTimeAvailability, Integer> {
+
     Integer countByUserId(Integer userId);
 
     List<OneTimeAvailability> findAllByUserId(Integer userId);
+
 }

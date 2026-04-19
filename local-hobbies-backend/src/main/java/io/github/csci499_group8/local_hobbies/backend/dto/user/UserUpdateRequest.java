@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.user;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.common.GeoJsonPoint;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.UserGenderMatched;
 import jakarta.validation.Valid;
 
 import java.time.LocalDate;
@@ -17,7 +18,7 @@ public record UserUpdateRequest(
     @Valid GeoJsonPoint location,
     String publicContactInfo,
     String profilePhotoUrl,
-    GenderMatched genderMatched,
+    UserGenderMatched genderMatched,
     boolean showAge,
     boolean showGenderDisplayed
 ) {}

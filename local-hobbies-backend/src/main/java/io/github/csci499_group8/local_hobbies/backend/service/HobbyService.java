@@ -39,7 +39,7 @@ public class HobbyService {
 
     @Transactional
     public HobbyResponse addHobby(Integer userId, HobbyCreationRequest request) {
-        if (hobbyRepository.existsByUserAndName(userId, request.name())) {
+        if (hobbyRepository.existsByUserIdAndHobbyName(userId, request.name())) {
             throw new IllegalStateException("Hobby already exists");
         }
 
@@ -50,7 +50,7 @@ public class HobbyService {
     @Transactional
     public HobbyResponse updateHobby(Integer userId, Integer hobbyId,
                                      HobbyUpdateRequest request) {
-        Hobby hobby = findHobbyByUserAndId(userId, hobbyId);
+        Hobby hobby = findHobbyByUserIdAndId(userId, hobbyId);
 
         hobbyMapper.updateEntity(request, hobby);
         return hobbyMapper.toResponse(hobbyRepository.save(hobby));
@@ -58,14 +58,14 @@ public class HobbyService {
 
     @Transactional
     public void deleteHobby(Integer userId, Integer hobbyId) {
-        Hobby hobby = findHobbyByUserAndId(userId, hobbyId);
+        Hobby hobby = findHobbyByUserIdAndId(userId, hobbyId);
 
         hobbyRepository.delete(hobby);
     }
 
     @Transactional(readOnly = true)
     public List<GlobalHobbyResponse> getGlobalHobbies() {
-        return globalHobbyRepository.getAll().stream()
+        return globalHobbyRepository.findAll().stream()
                                     .map(hobbyMapper::toGlobalResponse)
                                     .toList();
     }
@@ -73,7 +73,7 @@ public class HobbyService {
     @Transactional(readOnly = true)
     public UploadUrlResponse generatePresignedUploadUrl(Integer userId, Integer hobbyId,
                                                         UploadUrlRequest request) {
-        findHobbyByUserAndId(userId, hobbyId);
+        findHobbyByUserIdAndId(userId, hobbyId);
 
         //key = file path/ID
         String objectKey = "users/" + userId + "/hobbies/" + hobbyId + "/"
@@ -93,7 +93,7 @@ public class HobbyService {
     @Transactional
     public HobbyPhotoResponse addHobbyPhoto(Integer userId, Integer hobbyId,
                                             HobbyPhotoCreationRequest request) {
-        findHobbyByUserAndId(userId, hobbyId);
+        findHobbyByUserIdAndId(userId, hobbyId);
 
         HobbyPhoto photo = hobbyMapper.toPhotoEntity(request, hobbyId);
         return hobbyMapper.toPhotoResponse(hobbyPhotoRepository.save(photo));
@@ -102,7 +102,7 @@ public class HobbyService {
     @Transactional
     public HobbyPhotoResponse updateHobbyPhoto(Integer userId, Integer photoId,
                                                HobbyPhotoUpdateRequest request) {
-        HobbyPhoto photo = findHobbyPhotoByUserAndId(userId, photoId);
+        HobbyPhoto photo = findHobbyPhotoByUserIdAndId(userId, photoId);
 
         hobbyMapper.updatePhotoEntity(request, photo);
         return hobbyMapper.toPhotoResponse(hobbyPhotoRepository.save(photo));
@@ -110,9 +110,9 @@ public class HobbyService {
 
     @Transactional
     public void deleteHobbyPhoto(Integer userId, Integer photoId) {
-        HobbyPhoto photo = findHobbyPhotoByUserAndId(userId, photoId);
+        HobbyPhoto photo = findHobbyPhotoByUserIdAndId(userId, photoId);
 
-        storageService.deleteObject(photo.getUrl());
+        storageService.deleteObject(photo.getPhotoUrl());
         hobbyPhotoRepository.delete(photo);
     }
 
@@ -135,7 +135,7 @@ public class HobbyService {
     @Transactional(readOnly = true)
     public List<HobbyOverlapResponse> getOverlappingHobbies(Integer currentUserId,
                                                             Integer otherUserId) {
-        userService.findOtherUserOrThrow(otherUserId);
+        userService.getUserByIdOrThrow(otherUserId);
 
         //TODO: Custom SQL to find hobbies with the same name between two userIds
         return hobbyRepository.findOverlappingHobbies(currentUserId, otherUserId);
@@ -173,7 +173,7 @@ public class HobbyService {
      * requests.
      * @throws ResourceNotFoundException if hobby does not exist or request is unauthorized
      */
-    protected Hobby findHobbyByUserAndId(Integer userId, Integer hobbyId) {
+    protected Hobby findHobbyByUserIdAndId(Integer userId, Integer hobbyId) {
         Hobby hobby = hobbyRepository.findById(hobbyId).orElseThrow(
                 () -> new ResourceNotFoundException("Hobby not found with ID: " + hobbyId)
         );
@@ -192,13 +192,13 @@ public class HobbyService {
      * @throws ResourceNotFoundException if hobby photo does not exist or request
      *         is unauthorized
      */
-    protected HobbyPhoto findHobbyPhotoByUserAndId(Integer userId, Integer photoId) {
+    protected HobbyPhoto findHobbyPhotoByUserIdAndId(Integer userId, Integer photoId) {
         HobbyPhoto photo = hobbyPhotoRepository.findById(photoId).orElseThrow(
                 () -> new ResourceNotFoundException("Hobby photo not found with ID: " + photoId)
         );
 
         //verify ownership and log forbidden requests
-        findHobbyByUserAndId(userId, photo.getHobbyId());
+        findHobbyByUserIdAndId(userId, photo.getHobbyId());
 
         return photo;
     }

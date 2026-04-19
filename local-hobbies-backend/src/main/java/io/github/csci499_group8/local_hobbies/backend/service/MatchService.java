@@ -6,6 +6,7 @@ import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFound
 import io.github.csci499_group8.local_hobbies.backend.mapper.MatchMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserSpecifications;
 import lombok.RequiredArgsConstructor;
@@ -62,13 +63,15 @@ public class MatchService {
 
     @Transactional(readOnly = true)
     public List<SavedMatchResponse> getSavedMatches(Integer userId) {
-        return savedMatchRepository.findAllByUserAndStatus(userId, "Active");
+        return savedMatchRepository.findAllByUserIdAndStatus(userId, MatchStatus.ACTIVE).stream()
+                                   .map(matchMapper::toResponse)
+                                   .toList();
     }
 
     @Transactional
     public SavedMatchResponse saveMatch(Integer userId, SavedMatchCreationRequest request) {
-        if (savedMatchRepository.existsByUserAndSavedUserAndHobbyAndStatus(userId, request.savedUserId(),
-                                                                           request.hobby(), "Active")) {
+        if (savedMatchRepository.existsByUserIdAndSavedUserIdAndHobbyNameAndStatus(userId, request.savedUserId(),
+                                                                                   request.hobby(), MatchStatus.ACTIVE)) {
             throw new IllegalStateException("Saved match already exists");
         }
 
@@ -79,7 +82,7 @@ public class MatchService {
     @Transactional
     public SavedMatchResponse updateSavedMatch(Integer userId, Integer matchId,
                                                SavedMatchUpdateRequest request) {
-        SavedMatch match = findMatchByUserAndId(userId, matchId, "Active");
+        SavedMatch match = findMatchByUserIdAndIdAndStatus(userId, matchId, MatchStatus.ACTIVE);
 
         matchMapper.updateEntity(request, match);
         return matchMapper.toResponse(savedMatchRepository.save(match));
@@ -88,7 +91,7 @@ public class MatchService {
     //soft deletion; database will permanently delete if not restored within some time period
     @Transactional
     public void deleteSavedMatch(Integer userId, Integer matchId) {
-        SavedMatch match = findMatchByUserAndId(userId, matchId, "Active");
+        SavedMatch match = findMatchByUserIdAndIdAndStatus(userId, matchId, MatchStatus.ACTIVE);
 
         match.softDelete();
         savedMatchRepository.save(match);
@@ -96,12 +99,14 @@ public class MatchService {
 
     @Transactional(readOnly = true)
     public List<SavedMatchResponse> getDeletedSavedMatches(Integer userId) {
-        return savedMatchRepository.findAllByUserAndStatus(userId, "Deleted");
+        return savedMatchRepository.findAllByUserIdAndStatus(userId, MatchStatus.DELETED).stream()
+                                   .map(matchMapper::toResponse)
+                                   .toList();
     }
 
     @Transactional
     public SavedMatchResponse restoreSavedMatch(Integer userId, Integer matchId) {
-        SavedMatch match = findMatchByUserAndId(userId, matchId, "Deleted");
+        SavedMatch match = findMatchByUserIdAndIdAndStatus(userId, matchId, MatchStatus.DELETED);
 
         match.restore();
         return matchMapper.toResponse(savedMatchRepository.save(match));
@@ -111,13 +116,13 @@ public class MatchService {
 
     @Transactional(readOnly = true)
     public Integer getMatchCount(Integer userId) {
-        return savedMatchRepository.countByUserAndStatus(userId, "Active");
+        return savedMatchRepository.countByUserIdAndStatus(userId, MatchStatus.ACTIVE);
     }
 
     @Transactional(readOnly = true)
     public boolean isSavedMatch(Integer currentUserId, Integer otherUserId) {
         return savedMatchRepository
-                .existsByUserAndSavedUserAndStatus(currentUserId, otherUserId, "Active");
+                .existsByUserIdAndSavedUserIdAndStatus(currentUserId, otherUserId, MatchStatus.ACTIVE);
     }
 
     // --- private helper methods ---
@@ -128,7 +133,7 @@ public class MatchService {
      * @throws ResourceNotFoundException if match does not exist, match is not in
      *                                   expected state, or request is unauthorized
      */
-    private SavedMatch findMatchByUserAndId(Integer userId, Integer matchId, String status) {
+    private SavedMatch findMatchByUserIdAndIdAndStatus(Integer userId, Integer matchId, MatchStatus status) {
         SavedMatch match = savedMatchRepository.findByIdAndStatus(matchId, status).orElseThrow(
                 () -> new ResourceNotFoundException("Match not found with ID: " + matchId));
 

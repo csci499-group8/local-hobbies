@@ -1,41 +1,54 @@
 package io.github.csci499_group8.local_hobbies.backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.validation.constraints.NotNull;
+import io.github.csci499_group8.local_hobbies.backend.dto.availability.validation.MaxDurationHours;
+import jakarta.persistence.*;
+import lombok.*;
 import org.locationtech.jts.geom.Point;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
+
 @Entity
+@Table(name = "availability_exception", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"recurring_availability_id", "exception_date"})
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AvailabilityException implements UserOwned {
 
-    public Integer getUserId() {
-        return null;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    public Integer getRecurringAvailabilityId() {
-        return null;
-    }
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
 
-    public LocalDate getExceptionDate() {
-        return null;
-    }
+    @Column(name = "recurring_availability_id", nullable = false)
+    private Integer recurringAvailabilityId;
 
-    public boolean getIsCancelled() {
-        return false;
-    }
+    @Column(name = "exception_date", nullable = false)
+    private LocalDate exceptionDate;
 
-    public @NotNull Integer getId() {
-    }
+    @Column(name = "exception_reason", columnDefinition = "TEXT")
+    private String exceptionReason;
 
-    public @NotNull Point getOverrideLocation() {
-    }
+    @Column(name = "is_cancelled", nullable = false)
+    private boolean isCancelled;
 
-    public @NotNull LocalTime getOverrideStartTime() {
-    }
+    @Column(name = "override_location", columnDefinition = "geography(Point, 4326)")
+    private Point overrideLocation;
 
-    public @NotNull Duration getOverrideDuration() {
-    }
+    @Column(name = "override_start_time")
+    private LocalTime overrideStartTime;
+
+    @Column(name = "override_duration")
+    @MaxDurationHours(MAX_DURATION_HOURS)
+    private Duration overrideDuration;
+
 }

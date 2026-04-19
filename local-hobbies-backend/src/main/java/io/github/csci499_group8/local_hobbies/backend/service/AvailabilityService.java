@@ -78,7 +78,7 @@ public class AvailabilityService {
     @Transactional
     public OneTimeAvailabilityResponse updateOneTime(Integer userId, Integer oneTimeId,
                                                      OneTimeAvailabilityUpdateRequest request) {
-        OneTimeAvailability availability = findAvailabilityByUserAndId(userId, oneTimeId, oneTimeRepository);
+        OneTimeAvailability availability = findAvailabilityByUserIdAndId(userId, oneTimeId, oneTimeRepository);
 
         availabilityMapper.updateEntity(request, availability);
 
@@ -108,7 +108,7 @@ public class AvailabilityService {
     @Transactional
     public RecurringAvailabilityResponse updateRecurring(Integer userId, Integer recurringId,
                                                          RecurringAvailabilityUpdateRequest request) {
-        RecurringAvailability availability = findAvailabilityByUserAndId(userId, recurringId, recurringRepository);
+        RecurringAvailability availability = findAvailabilityByUserIdAndId(userId, recurringId, recurringRepository);
 
         availabilityMapper.updateEntity(request, availability);
 
@@ -126,6 +126,7 @@ public class AvailabilityService {
     }
 
     //TODO: logic for ensuring exception date is a recurring date
+    //TODO: check that exception has not already been created for date?
     //TODO: extract above + logic for fetching recurring availability?
     @Transactional
     public AvailabilityExceptionResponse createException(Integer userId,
@@ -147,7 +148,7 @@ public class AvailabilityService {
     @Transactional
     public AvailabilityExceptionResponse updateException(Integer userId, Integer exceptionId,
                                                          AvailabilityExceptionUpdateRequest request) {
-        AvailabilityException exception = findAvailabilityByUserAndId(userId, exceptionId, exceptionRepository);
+        AvailabilityException exception = findAvailabilityByUserIdAndId(userId, exceptionId, exceptionRepository);
 
         availabilityMapper.updateEntity(request, exception);
 
@@ -247,7 +248,7 @@ public class AvailabilityService {
      * @throws ResourceNotFoundException if availability does not exist or request
      *         is unauthorized
      */
-    private <E extends UserOwned> E findAvailabilityByUserAndId(Integer userId,
+    private <E extends UserOwned> E findAvailabilityByUserIdAndId(Integer userId,
                                                                 Integer availabilityId,
                                                                 JpaRepository<E, Integer> repository) {
         E availability = repository.findById(availabilityId).orElseThrow(
@@ -269,7 +270,7 @@ public class AvailabilityService {
     private <E extends UserOwned> void deleteAvailability(Integer userId,
                                         Integer availabilityId,
                                         JpaRepository<E, Integer> repository) {
-        E availability = findAvailabilityByUserAndId(userId, availabilityId, repository);
+        E availability = findAvailabilityByUserIdAndId(userId, availabilityId, repository);
 
         repository.delete(availability);
     }
@@ -356,23 +357,24 @@ public class AvailabilityService {
                 ));
 
         return recurringRepository.findAllByUserId(userId).stream().flatMap(
-                availability -> {
-                    return getRecurringOccurrences(availability, windowStart, windowEnd).stream().map(
-                            occurrence -> {
-                                //check if this occurrence has an exception
-                                ExceptionKey key = new ExceptionKey(availability.getId(),
-                                                                    occurrence);
-                                AvailabilityException exception = exceptionMap.get(key);
+                availability ->
+                    getRecurringOccurrences(availability, windowStart, windowEnd).stream().map(
+                        occurrence -> {
+                            //check if this occurrence has an exception
+                            ExceptionKey key = new ExceptionKey(availability.getId(),
+                                                                occurrence);
+                            AvailabilityException exception = exceptionMap.get(key);
 
-                                if (exception == null) { //if no exception, return recurring interval
-                                    return availabilityMapper.toInterval(availability, occurrence);
-                                }
-                                if (!exception.getIsCancelled()) { //if exception is an override, return override
-                                    return availabilityMapper.toInterval(exception, availability);
-                                }
-                                return null; //if exception is a cancellation, return null
-                            });
-                })
+                            if (exception == null) { //if no exception, return recurring interval
+                                return availabilityMapper.toInterval(availability, occurrence);
+                            }
+                            if (!exception.isCancelled()) { //if exception is an override, return override
+                                return availabilityMapper.toInterval(exception, availability);
+                            }
+                            return null; //if exception is a cancellation, return null
+                        }
+                    )
+                )
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -453,7 +455,7 @@ public class AvailabilityService {
                                  if (exception == null) { //if no exception, return recurring interval
                                      return availabilityMapper.toInterval(recurring, occurrence);
                                  }
-                                 if (!exception.getIsCancelled()) { //if exception is an override, return override
+                                 if (!exception.isCancelled()) { //if exception is an override, return override
                                      return availabilityMapper.toInterval(exception, recurring);
                                  }
                                  return null; //if exception is a cancellation, return null

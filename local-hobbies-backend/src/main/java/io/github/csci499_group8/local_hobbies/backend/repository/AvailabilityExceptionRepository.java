@@ -8,5 +8,7 @@ import java.util.List;
 
 @Repository
 public interface AvailabilityExceptionRepository extends JpaRepository<AvailabilityException, Integer> {
+
     List<AvailabilityException> findAllByUserId(Integer userId);
+
 }

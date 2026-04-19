@@ -3,6 +3,7 @@ package io.github.csci499_group8.local_hobbies.backend.dto.availability;
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.validation.MaxDurationHours;
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.validation.WithinDays;
 import io.github.csci499_group8.local_hobbies.backend.dto.common.GeoJsonPoint;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityFrequency;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 

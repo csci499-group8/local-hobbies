@@ -1,54 +1,59 @@
 package io.github.csci499_group8.local_hobbies.backend.model;
 
-import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityFrequency;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.validation.constraints.NotNull;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityFrequency;
+import io.github.csci499_group8.local_hobbies.backend.dto.availability.validation.MaxDurationHours;
+import jakarta.persistence.*;
+import lombok.*;
 import org.locationtech.jts.geom.Point;
 
 import java.time.*;
-import java.time.temporal.TemporalAmount;
+
+import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
 
 @Entity
+@Table(name = "recurring_availability")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RecurringAvailability implements UserOwned {
 
-    public Integer getUserId() {
-        return null;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    public AvailabilityFrequency getFrequency() {
-        return null;
-    }
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    @Column(nullable = false, columnDefinition = "geography(Point, 4326)")
+    private Point location;
+
+    @Column(name = "rule_start", nullable = false)
+    private LocalDate ruleStart;
+
+    @Column(name = "rule_end")
+    private LocalDate ruleEnd;
 
     @Enumerated(EnumType.STRING)
-    public DayOfWeek getStartDayOfWeek() {
-    }
+    @Column(nullable = false)
+    private AvailabilityFrequency frequency;
 
-    public int getStartDayOfMonth() {
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(name = "start_day_of_week")
+    private DayOfWeek startDayOfWeek;
 
-    public LocalDate getRuleStart() {
-    }
+    @Column(name = "start_day_of_month")
+    private Integer startDayOfMonth;
 
-    public LocalDate getRuleEnd() {
-        return null;
-    }
+    @Column(name = "start_time", nullable = false)
+    private LocalTime startTime;
 
-    public LocalTime getStartTime() {
-    }
+    @Column(nullable = false)
+    @MaxDurationHours(MAX_DURATION_HOURS)
+    private Duration duration;
 
-    public ZoneId getZoneId() {
-        return null;
-    }
+    @Column(name = "time_zone_id", nullable = false, length = 64)
+    private String timeZoneId;
 
-    public Duration getDuration() {
-    }
-
-    public Integer getId() {
-    }
-
-    public @NotNull Point getLocation() {
-        return null;
-    }
 }

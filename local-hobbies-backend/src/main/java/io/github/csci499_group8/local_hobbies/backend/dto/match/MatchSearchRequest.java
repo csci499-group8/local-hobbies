@@ -1,7 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.match;
 
-import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyExperienceLevel;
-import io.github.csci499_group8.local_hobbies.backend.dto.user.GenderMatched;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienceLevel;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.UserGenderMatched;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
@@ -19,7 +19,7 @@ public record MatchSearchRequest(
     @NotNull List<String> softFilters
 ) {
     public record SearchFilters(
-        List<GenderMatched> genders,
+        List<UserGenderMatched> genders,
         @Min(13) Integer minAge,
         @Max(120) Integer maxAge,
         //TODO: @Min(2) @Max(5) Integer groupSize,

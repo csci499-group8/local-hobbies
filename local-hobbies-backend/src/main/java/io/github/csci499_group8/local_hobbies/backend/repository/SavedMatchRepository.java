@@ -1,9 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.repository;
 
-import io.github.csci499_group8.local_hobbies.backend.dto.match.SavedMatchResponse;
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,21 +10,17 @@ import java.util.Optional;
 
 @Repository
 public interface SavedMatchRepository extends JpaRepository<SavedMatch, Integer> {
-    List<SavedMatch> findAllByUserId(Integer userId);
 
-    boolean existsByUserAndSavedUserAndHobbyAndStatus(Integer userId, @NotNull Integer integer, @NotBlank String hobby,
-                                                      String status);
+    Optional<SavedMatch> findByIdAndStatus(Integer matchId, MatchStatus status);
 
-    Integer countByUserId(Integer userId);
+    Integer countByUserIdAndStatus(Integer userId, MatchStatus status);
 
-    boolean existsByUserAndSavedUser(Integer currentUserId, Integer otherUserId);
+    List<SavedMatch> findAllByUserIdAndStatus(Integer userId, MatchStatus status);
 
-    Integer countByUserAndStatus(Integer userId, String active);
+    boolean existsByUserIdAndSavedUserIdAndStatus(Integer currentUserId, Integer otherUserId,
+                                                  MatchStatus status);
 
-    boolean existsByUserAndSavedUserAndStatus(Integer currentUserId, Integer otherUserId, String active);
-
-    List<SavedMatchResponse> findAllByUserAndStatus(Integer userId, String active);
-
-    Optional<SavedMatch> findByIdAndStatus(Integer matchId, String active);
+    boolean existsByUserIdAndSavedUserIdAndHobbyNameAndStatus(Integer userId, Integer integer,
+                                                              String hobby, MatchStatus status);
 
 }

@@ -66,8 +66,8 @@ public class UserService {
 
     @Transactional
     public User processOnboarding(Integer userId, UserOnboardingRequest request) {
-        User user = userRepository.getById(userId);
-        String locationApproximate = getApproximateLocation(userId, request.location());
+        User user = getUserByIdOrThrow(userId);
+        String locationApproximate = getApproximateLocation(request.location());
         userMapper.updateEntity(request, locationApproximate, user);
 
         hobbyService.addOnboardingHobbies(userId, request);
@@ -82,12 +82,12 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(Integer userId) {
-        return userMapper.toResponse(userRepository.getById(userId));
+        return userMapper.toResponse(getUserByIdOrThrow(userId));
     }
 
     @Transactional(readOnly = true)
     public List<UserOnboardingIncompleteSection> getIncompleteSections(Integer userId) {
-        User user = userRepository.getById(userId);
+        User user = getUserByIdOrThrow(userId);
 
         List<UserOnboardingIncompleteSection> incompleteSections = new ArrayList<>();
 
@@ -134,8 +134,8 @@ public class UserService {
 
     @Transactional
     public UserResponse updateUser(Integer userId, UserUpdateRequest request) {
-        User user = userRepository.getById(userId);
-        String locationApproximate = getApproximateLocation(userId, request.location());
+        User user = getUserByIdOrThrow(userId);
+        String locationApproximate = getApproximateLocation(request.location());
         userMapper.updateEntity(request, locationApproximate, user);
 
         return userMapper.toResponse(userRepository.save(user));
@@ -162,7 +162,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserHomepageResponse getHomepage(Integer userId) {
-        User user = userRepository.getById(userId);
+        User user = getUserByIdOrThrow(userId);
 
         UserSummary userSummary = new UserSummary(user.getId(),
                                                   user.getName(),
@@ -178,7 +178,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public CurrentUserProfileResponse getCurrentUserProfile(Integer userId) {
-        User user = userRepository.getById(userId);
+        User user = getUserByIdOrThrow(userId);
         List<HobbyResponse> hobbies = hobbyService.getHobbiesByUserId(userId);
         List<HobbyPhotoResponse> hobbyPhotos = hobbyService.getHobbyPhotosByUserId(userId);
 
@@ -187,7 +187,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public OtherUserProfileResponse getOtherUserProfile(Integer currentUserId, Integer otherUserId) {
-        UserResponse otherUser = findOtherUserOrThrow(otherUserId);
+        UserResponse otherUser = userMapper.toResponse(getUserByIdOrThrow(otherUserId));
 
         List<HobbyResponse> otherUserHobbies = hobbyService.getHobbiesByUserId(otherUserId);
         List<HobbyPhotoResponse> otherUserHobbyPhotos = hobbyService.getHobbyPhotosByUserId(otherUserId);
@@ -205,12 +205,10 @@ public class UserService {
     // --- methods called by services ---
 
     @Transactional(readOnly = true)
-    public UserResponse findOtherUserOrThrow(Integer otherUserId) {
-        User otherUser = userRepository.findById(otherUserId).orElseThrow(
-                () -> new ResourceNotFoundException("User not found with ID: " + otherUserId)
+    public User getUserByIdOrThrow(Integer userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("User not found with ID: " + userId)
         );
-
-        return userMapper.toResponse(otherUser);
     }
 
     /**
@@ -239,7 +237,7 @@ public class UserService {
                 && availabilityCount >= MIN_NUM_AVAILABILITIES;
     }
 
-    private String getApproximateLocation(Integer userId, GeoJsonPoint locationPoint) {
+    private String getApproximateLocation(GeoJsonPoint locationPoint) {
         return locationService.getCityFromPoint(locationPoint.getLongitude(), locationPoint.getLatitude());
     }
 

@@ -1,54 +1,72 @@
 package io.github.csci499_group8.local_hobbies.backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import org.jspecify.annotations.Nullable;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.UserGenderMatched;
+import jakarta.persistence.*;
+import lombok.*;
 import org.locationtech.jts.geom.Point;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
-    private Point location;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    public @NotNull Integer getId() {
-    }
+    @Column(unique = true, nullable = false, length = 40)
+    private String username;
 
-    public @NotBlank String getName() {
-    }
+    @Column(nullable = false)
+    private String password;
 
-    public String getProfilePhotoUrl() {
-    }
+    @Column(unique = true, nullable = false, length = 254)
+    private String email;
 
-    public Object getBirthDate() {
-    }
+    @Column(name = "last_session_time", nullable = false)
+    private OffsetDateTime lastSessionTime;
 
-    public Object getLocationPoint() {
-    }
+    @Column(name = "onboarding_complete", nullable = false)
+    private boolean onboardingComplete = false;
 
-    public String getPublicContactInfo() {
-    }
+    private String name;
 
-    public Object getGenderMatched() {
-    }
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
-    public Object getShowAge() {
-        return null;
-    }
+    @Column(name = "gender_displayed")
+    private String genderDisplayed;
 
-    public Object getShowGenderDisplayed() {
-    }
+    @Column(columnDefinition = "TEXT") //explicitly stated to override default VARCHAR(255)
+    private String bio;
 
-    public void setOnboardingComplete(boolean b) {
-    }
+    @Column(name = "location_point", columnDefinition = "geography(Point, 4326)")
+    private Point locationPoint;
 
-    public @Nullable String getPassword() {
-        return null;
-    }
+    @Column(name = "location_approximate")
+    private String locationApproximate;
 
-    public @NotNull boolean isOnboardingComplete() {
-        return false;
-    }
+    @Column(name = "public_contact_info")
+    private String publicContactInfo;
+
+    @Column(name = "profile_photo_url")
+    private String profilePhotoUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender_matched")
+    private UserGenderMatched genderMatched;
+
+    @Column(name = "show_age")
+    private Boolean showAge;
+
+    @Column(name = "show_gender_displayed")
+    private Boolean showGenderDisplayed;
+
 }
