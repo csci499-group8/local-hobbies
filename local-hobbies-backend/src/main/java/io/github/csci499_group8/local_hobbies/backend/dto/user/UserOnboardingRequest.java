@@ -1,8 +1,9 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.user;
 
-import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityCreationListRequest;
+import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityOnboardingRequests;
 import io.github.csci499_group8.local_hobbies.backend.dto.common.GeoJsonPoint;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyCreationRequest;
+import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,9 +14,9 @@ import java.util.List;
 public record UserOnboardingRequest(
     String name,
     LocalDate birthDate,
-    GeoJsonPoint location,
+    @Valid GeoJsonPoint location,
     String publicContactInfo,
     GenderMatched genderMatched,
-    List<HobbyCreationRequest> hobbies,
-    AvailabilityCreationListRequest availabilities
+    @Valid List<HobbyCreationRequest> hobbies,
+    @Valid AvailabilityOnboardingRequests availabilities
 ) {}

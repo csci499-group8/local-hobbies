@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record HobbyPhotoResponse(
     @NotNull Integer id,
-    @NotBlank String hobby,
+    @NotNull Integer hobbyId,
     @NotBlank String photoUrl,
     String caption //may be null
 ) {}

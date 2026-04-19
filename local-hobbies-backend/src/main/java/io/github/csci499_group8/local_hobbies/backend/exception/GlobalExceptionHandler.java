@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    //TODO: log original messages and replace with safe, public messages
+    //TODO: use static messages and insert variable values?
+
     //400 BAD REQUEST
     @ExceptionHandler({
             MethodArgumentNotValidException.class,

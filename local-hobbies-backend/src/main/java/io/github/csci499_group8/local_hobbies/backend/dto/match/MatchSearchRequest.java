@@ -1,7 +1,6 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.match;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.csci499_group8.local_hobbies.backend.dto.hobby.ExperienceLevel;
+import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyExperienceLevel;
 import io.github.csci499_group8.local_hobbies.backend.dto.user.GenderMatched;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -14,7 +13,7 @@ import java.util.stream.Stream;
 public record MatchSearchRequest(
     @NotBlank String hobby,
     @NotNull @Min(0) Integer radiusKilometers,
-    @NotNull @Min(0) Integer minimumOverlapMinutes,
+    @NotNull @Min(0) Integer minimumOverlapMinutes, //TODO: @MaxDurationHours to minutes
     @NotNull @Valid SearchFilters filters,
     @NotNull List<String> hardFilters,
     @NotNull List<String> softFilters
@@ -23,20 +22,16 @@ public record MatchSearchRequest(
         List<GenderMatched> genders,
         @Min(13) Integer minAge,
         @Max(120) Integer maxAge,
-        @Min(2) @Max(5) Integer groupSize,
-        ExperienceLevel experienceLevel,
-        AvailabilityType availabilityType
+        //TODO: @Min(2) @Max(5) Integer groupSize,
+        HobbyExperienceLevel experienceLevel
+        //TODO: AvailabilityType availabilityType
     ) {}
-
-    public enum AvailabilityType {
-        @JsonProperty("One-time") ONE_TIME,
-        Recurring
-    }
 
     @AssertTrue(message = "Hard and soft filters must be a subset of available filter fields")
     private boolean isFilterSubsetValid() {
+        //TODO: convert values to enum
         Set<String> validKeys = Set.of(
-            "genders", "minAge", "maxAge", "groupSize", "experienceLevel", "availabilityType"
+            "genders", "minAge", "maxAge", "experienceLevel"
         );
 
         //check if all elements in both lists exist in validKeys
@@ -59,9 +54,7 @@ public record MatchSearchRequest(
             case "genders" -> filters.genders() != null && !filters.genders().isEmpty();
             case "minAge" -> filters.minAge() != null;
             case "maxAge" -> filters.maxAge() != null;
-            case "groupSize" -> filters.groupSize() != null;
             case "experienceLevel" -> filters.experienceLevel() != null;
-            case "availabilityType" -> filters.availabilityType() != null;
             default -> false;
         };
     }

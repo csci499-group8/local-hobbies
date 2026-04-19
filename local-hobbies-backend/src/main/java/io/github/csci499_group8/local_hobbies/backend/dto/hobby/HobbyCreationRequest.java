@@ -5,5 +5,5 @@ import jakarta.validation.constraints.NotNull;
 
 public record HobbyCreationRequest(
     @NotBlank String name,
-    @NotNull ExperienceLevel experienceLevel
+    @NotNull HobbyExperienceLevel experienceLevel
 ) {}

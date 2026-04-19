@@ -7,5 +7,5 @@ public record HobbyResponse(
     @NotNull Integer id,
     @NotBlank String name,
     @NotBlank String category,
-    @NotNull ExperienceLevel experienceLevel
+    @NotNull HobbyExperienceLevel experienceLevel
 ) {}

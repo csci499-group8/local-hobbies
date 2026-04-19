@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 
 public record UploadUrlResponse(
-    @NotNull Integer fileId,
+    @NotBlank String fileId,
     @NotBlank String uploadUrl,
     @NotNull OffsetDateTime expirationTime
 ) {}

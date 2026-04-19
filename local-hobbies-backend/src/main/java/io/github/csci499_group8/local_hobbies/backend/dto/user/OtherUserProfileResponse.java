@@ -4,6 +4,7 @@ import io.github.csci499_group8.local_hobbies.backend.dto.availability.Availabil
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyOverlapResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyPhotoResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -18,9 +19,9 @@ public record OtherUserProfileResponse (
     @NotBlank String locationApproximate,
     @NotBlank String publicContactInfo,
     String profilePhotoUrl,
-    @NotNull List<HobbyResponse> hobbies,
-    @NotNull List<HobbyPhotoResponse> hobbyPhotos,
+    @Valid @NotNull List<HobbyResponse> hobbies,
+    @Valid @NotNull List<HobbyPhotoResponse> hobbyPhotos,
     @NotNull boolean isSavedMatch,
-    @NotNull List<HobbyOverlapResponse> overlappingHobbies,
-    @NotNull List<AvailabilityOverlapResponse> overlappingAvailabilities
+    @Valid @NotNull List<HobbyOverlapResponse> overlappingHobbies,
+    @Valid @NotNull List<AvailabilityOverlapResponse> overlappingAvailabilities
 ) {}

@@ -1,5 +1,6 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.auth;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -9,8 +10,8 @@ import java.time.OffsetDateTime;
  * Response for successful signup, login, and onboarding
  */
 public record AuthResponse(
-    @NotNull Auth auth,
-    @NotNull AuthResponse.User user
+    @Valid @NotNull Auth auth,
+    @Valid @NotNull AuthResponse.User user
 ) {
     /**
      * Token and session security details
