@@ -1,28 +1,40 @@
 package io.github.csci499_group8.local_hobbies.backend.mapper;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityOverlapResponse;
-import io.github.csci499_group8.local_hobbies.backend.dto.match.MatchSearchResultResponse;
-import io.github.csci499_group8.local_hobbies.backend.dto.match.SavedMatchCreationRequest;
-import io.github.csci499_group8.local_hobbies.backend.dto.match.SavedMatchResponse;
-import io.github.csci499_group8.local_hobbies.backend.dto.match.SavedMatchUpdateRequest;
+import io.github.csci499_group8.local_hobbies.backend.dto.match.*;
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchDistanceType;
+import org.mapstruct.*;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface MatchMapper {
+        uses = { JsonNullableMapper.class })
+public abstract class MatchMapper {
 
-    SavedMatch toEntity(SavedMatchCreationRequest request, Integer userId);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "hobbyName", source = "request.hobby")
+    @Mapping(target = "creationTime", ignore = true)
+    public abstract SavedMatch toEntity(SavedMatchCreationRequest request, Integer userId);
 
-    void updateEntity(SavedMatchUpdateRequest request, @MappingTarget SavedMatch match);
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "notes", source = "notes")
+    public abstract void updateEntity(SavedMatchUpdateRequest request, @MappingTarget SavedMatch match);
 
-    SavedMatchResponse toResponse(SavedMatch savedMatch);
+    @Mapping(target = "id", source = "savedMatch.id")
+    @Mapping(target = "savedUser", source = "savedUser") //automatically maps by calling mapToMatchedUser()
+    @Mapping(target = "hobby", source = "savedMatch.hobbyName")
+    public abstract SavedMatchResponse toSavedMatchResponse(SavedMatch savedMatch, User savedUser);
 
-    MatchSearchResultResponse toResponse(User matchedUser, List<AvailabilityOverlapResponse> overlaps)
+    @Mapping(target = "overlappingAvailabilities", source = "overlaps")
+    public abstract MatchSearchResultResponse toSearchResultResponse(User matchedUser,
+                                                     MatchDistanceType distanceType,
+                                                     Double distanceKilometers,
+                                                     List<AvailabilityOverlapResponse> overlaps);
+
+    //helper method
+    protected abstract MatchedUser mapToMatchedUser(User user);
 
 }

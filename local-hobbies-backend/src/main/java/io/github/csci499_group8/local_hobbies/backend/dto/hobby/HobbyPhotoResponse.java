@@ -7,5 +7,5 @@ public record HobbyPhotoResponse(
     @NotNull Integer id,
     @NotNull Integer hobbyId,
     @NotBlank String photoUrl,
-    String caption //may be null
+    String caption //nullable
 ) {}

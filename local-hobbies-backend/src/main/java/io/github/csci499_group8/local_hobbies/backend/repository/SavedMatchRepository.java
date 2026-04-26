@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.repository;
 
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -21,6 +22,6 @@ public interface SavedMatchRepository extends JpaRepository<SavedMatch, Integer>
                                                   MatchStatus status);
 
     boolean existsByUserIdAndSavedUserIdAndHobbyNameAndStatus(Integer userId, Integer integer,
-                                                              String hobby, MatchStatus status);
+                                                              HobbyName hobby, MatchStatus status);
 
 }

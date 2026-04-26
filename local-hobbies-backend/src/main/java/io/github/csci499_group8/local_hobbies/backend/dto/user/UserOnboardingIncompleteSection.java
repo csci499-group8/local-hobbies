@@ -15,6 +15,8 @@ public record UserOnboardingIncompleteSection(
         location,
         publicContactInfo,
         genderMatched,
+        showAge,
+        showGenderDisplayed,
         hobbies,
         availabilities
     }

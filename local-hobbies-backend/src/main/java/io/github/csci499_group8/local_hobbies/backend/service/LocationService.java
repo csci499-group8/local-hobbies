@@ -1,5 +1,6 @@
 package io.github.csci499_group8.local_hobbies.backend.service;
 
+import io.github.csci499_group8.local_hobbies.backend.dto.common.GeoJsonPoint;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
@@ -9,8 +10,8 @@ import org.springframework.stereotype.Service;
 public class LocationService {
 
     //TODO: implement geocoding API
-    public String getCityFromPoint(Double longitude, Double latitude) {
-        return null;
+    public String getCityFromGeoJsonPoint(GeoJsonPoint point) {
+        return "todo-approximate-location";
     }
 
     //Haversine formula to calculate distance from coordinates

@@ -16,10 +16,13 @@ public class UserSpecifications {
     public static Specification<User> buildHardFilterSpecification(MatchSearchRequest request, Integer userId) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            MatchSearchRequest.SearchFilters filters = request.filters();
+            List<MatchSearchRequest.MatchSearchFilter> filters = request.filters();
 
             //omit current user from results
             predicates.add(criteriaBuilder.notEqual(root.get("id"), userId));
+
+            //omit users who have not completed onboarding
+            predicates.add(criteriaBuilder.equal(root.get("onboardingComplete"), true));
 
             //join Users and Hobby tables
             Root<Hobby> hobbyRoot = query.from(Hobby.class);
@@ -36,16 +39,20 @@ public class UserSpecifications {
             );
 
             //apply requested filters (all are repository-level)
-            for (String filterName : request.hardFilters()) {
-                switch (filterName) {
-                    case "genders" ->
-                            predicates.add(root.get("genderMatched").in(filters.genders()));
-                    case "minAge" ->
-                            predicates.add(criteriaBuilder.greaterThanOrEqualTo(age, filters.minAge()));
-                    case "maxAge" ->
-                            predicates.add(criteriaBuilder.lessThanOrEqualTo(age, filters.maxAge()));
-                    case "experienceLevel" ->
-                            predicates.add(criteriaBuilder.equal(hobbyRoot.get("experienceLevel"), filters.experienceLevel()));
+            for (MatchSearchRequest.MatchSearchFilter filter : filters) {
+                if (filter.isHard()) {
+                    Predicate predicate = switch (filter) {
+                        case MatchSearchRequest.GendersFilter genders ->
+                            root.get("genderMatched").in(genders.genders());
+                        case MatchSearchRequest.MinAgeFilter minAge ->
+                            criteriaBuilder.greaterThanOrEqualTo(age, minAge.minAge());
+                        case MatchSearchRequest.MaxAgeFilter maxAge ->
+                            criteriaBuilder.lessThanOrEqualTo(age, maxAge.maxAge());
+                        case MatchSearchRequest.ExperienceLevelFilter experienceLevel ->
+                            criteriaBuilder.equal(hobbyRoot.get("experienceLevel"), experienceLevel.experienceLevel());
+                    };
+
+                    predicates.add(predicate);
                 }
             }
 

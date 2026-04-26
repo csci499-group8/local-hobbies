@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 CREATE TABLE users (
     id                    SERIAL PRIMARY KEY,
     username              VARCHAR(40)            UNIQUE NOT NULL,
@@ -12,8 +14,8 @@ CREATE TABLE users (
     bio                   TEXT,
     location_point        GEOGRAPHY(POINT, 4326),
     location_approximate  TEXT,
-	public_contact_info	  TEXT,
-	profile_photo_url	  TEXT,
+	  public_contact_info	  TEXT,
+	  profile_photo_url	    TEXT,
     gender_matched        TEXT CHECK (gender_matched IN ('MAN',
                                                          'NONBINARY',
                                                          'WOMAN')),
@@ -28,26 +30,91 @@ COMMENT ON COLUMN users.location_approximate IS 'Determined in app from location
 
 CREATE TABLE global_hobby (
     name     TEXT PRIMARY KEY,
-    category TEXT NOT NULL CHECK (category IN ('ARTS_AND_CRAFTS',
+    category TEXT NOT NULL CHECK (category IN ('CREATIVE_ARTS',
                                                'COOKING',
                                                'EDUCATION',
+                                               'ENGINEERING',
                                                'FITNESS',
                                                'GAMES',
                                                'MUSIC',
+                                               'OUTDOORS',
                                                'READING',
                                                'SOCIAL',
-                                               'SPORTS',
-                                               'TECHNOLOGY'
+                                               'SPORTS'
                                                --etc.
                                                ))
 );
-INSERT INTO global_hobby(name, category) VALUES ('STUDYING', 'EDUCATION'),
-                                                ('LANGUAGE_IMMERSION', 'EDUCATION'),
-                                                ('PAINTING', 'ARTS_AND_CRAFTS'),
-                                                ('CONCERTS', 'MUSIC'),
-                                                ('HIKING', 'FITNESS'),
-                                                ('YOGA', 'FITNESS')
-                                                --etc.
+INSERT INTO global_hobby (name, category) VALUES
+    --creative arts
+    ('PAINTING', 'CREATIVE_ARTS'),
+    ('DRAWING', 'CREATIVE_ARTS'),
+    ('KNITTING', 'CREATIVE_ARTS'),
+    ('WOODWORKING', 'CREATIVE_ARTS'),
+    ('POTTERY', 'CREATIVE_ARTS'),
+    ('WRITING', 'CREATIVE_ARTS'),
+    ('PHOTOGRAPHY', 'CREATIVE_ARTS'),
+    --cooking
+    ('BAKING', 'COOKING'),
+    ('GRILLING', 'COOKING'),
+    ('MEAL_PREPPING', 'COOKING'),
+    ('FERMENTING', 'COOKING'),
+    ('CAKE_DECORATING', 'COOKING'),
+    --education
+    ('LANGUAGE_LEARNING', 'EDUCATION'),
+    ('HISTORY', 'EDUCATION'),
+    ('SCIENCE', 'EDUCATION'),
+    ('MATHEMATICS', 'EDUCATION'),
+    ('STUDY_GROUPS', 'EDUCATION'),
+    ('RESEARCH', 'EDUCATION'),
+    ('ESSAY_WRITING', 'EDUCATION'),
+    --engineering
+    ('PROGRAMMING', 'ENGINEERING'),
+    ('ROBOTICS', 'ENGINEERING'),
+    ('ELECTRONICS', 'ENGINEERING'),
+    ('DIGITAL_FABRICATION', 'ENGINEERING'),
+    ('MODEL_BUILDING', 'ENGINEERING'),
+    --fitness
+    ('RUNNING', 'FITNESS'),
+    ('WEIGHTLIFTING', 'FITNESS'),
+    ('YOGA', 'FITNESS'),
+    ('CYCLING', 'FITNESS'),
+    ('PILATES', 'FITNESS'),
+    --games
+    ('BOARD_GAMES', 'GAMES'),
+    ('VIDEO_GAMES', 'GAMES'),
+    ('CARD_GAMES', 'GAMES'),
+    ('PUZZLES', 'GAMES'),
+    ('ROLE_PLAYING_GAMES', 'GAMES'),
+    --music
+    ('GUITAR', 'MUSIC'),
+    ('PIANO', 'MUSIC'),
+    ('SINGING', 'MUSIC'),
+    ('CONCERTS', 'MUSIC'),
+    ('MUSIC_PRODUCTION', 'MUSIC'),
+    --outdoors
+    ('HIKING', 'OUTDOORS'),
+    ('CAMPING', 'OUTDOORS'),
+    ('FISHING', 'OUTDOORS'),
+    ('GARDENING', 'OUTDOORS'),
+    ('BIRD_WATCHING', 'OUTDOORS'),
+    --reading
+    ('READING_FICTION', 'READING'),
+    ('READING_NONFICTION', 'READING'),
+    ('READING_COMICS', 'READING'),
+    ('READING_POETRY', 'READING'),
+    ('AUDIOBOOKS', 'READING'),
+    --social
+    ('VOLUNTEERING', 'SOCIAL'),
+    ('NETWORKING', 'SOCIAL'),
+    ('DANCING', 'SOCIAL'),
+    ('TRAVELING', 'SOCIAL'),
+    ('MEETUPS', 'SOCIAL'),
+    --sports
+    ('SOCCER', 'SPORTS'),
+    ('BASKETBALL', 'SPORTS'),
+    ('TENNIS', 'SPORTS'),
+    ('SWIMMING', 'SPORTS'),
+    ('CRICKET', 'SPORTS')
 ;
 
 CREATE TABLE hobby (
@@ -63,10 +130,10 @@ CREATE INDEX idx_hobby_hobby_name ON hobby (hobby_name);
 CREATE INDEX idx_hobby_user ON hobby (user_id);
 
 CREATE TABLE hobby_photo (
-	id			SERIAL PRIMARY KEY,
-    hobby_id    INT  NOT NULL REFERENCES hobby(id) ON DELETE CASCADE,
-	photo_url	TEXT NOT NULL,
-	caption		TEXT
+	id			      SERIAL PRIMARY KEY,
+  hobby_id      INT  NOT NULL REFERENCES hobby(id) ON DELETE CASCADE,
+	photo_url	    TEXT NOT NULL,
+	caption		    TEXT
 );
 
 
@@ -126,16 +193,16 @@ COMMENT ON COLUMN recurring_availability.rule_end IS 'Nullable (may be active in
 COMMENT ON COLUMN recurring_availability.time_zone_id IS 'IANA time zone ID';
 
 CREATE TABLE availability_exception (
-    id                  		SERIAL PRIMARY KEY,
-    user_id                     INT                     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    recurring_availability_id	INT						NOT NULL REFERENCES recurring_availability (id) ON DELETE CASCADE,
-    exception_date      		DATE					NOT NULL,
-	exception_reason			TEXT,
+    id                  		  SERIAL PRIMARY KEY,
+    user_id                   INT                     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    recurring_availability_id	INT						          NOT NULL REFERENCES recurring_availability (id) ON DELETE CASCADE,
+    exception_date      		  DATE					          NOT NULL,
+	  exception_reason			    TEXT,
 
-    is_cancelled        		BOOLEAN					NOT NULL,
-    override_location   		GEOGRAPHY(POINT, 4326),
-    override_start_time 		TIME,
-    override_duration   		INTERVAL                CHECK (override_duration > INTERVAL '0'
+    is_cancelled        		  BOOLEAN					        NOT NULL,
+    override_location   		  GEOGRAPHY(POINT, 4326),
+    override_start_time 		  TIME,
+    override_duration   		  INTERVAL                CHECK (override_duration > INTERVAL '0'
                                                              AND override_duration < INTERVAL '1 week'),
 
     CHECK (
@@ -153,7 +220,7 @@ CREATE TABLE saved_match (
     id            SERIAL PRIMARY KEY,
     user_id       INT           NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     saved_user_id INT           NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-	status		  TEXT          NOT NULL CHECK (status IN ('ACTIVE',
+	  status		    TEXT          NOT NULL CHECK (status IN ('ACTIVE',
                                                            'DELETED')),
     hobby_name    TEXT          NOT NULL REFERENCES global_hobby (name),
     notes         TEXT,

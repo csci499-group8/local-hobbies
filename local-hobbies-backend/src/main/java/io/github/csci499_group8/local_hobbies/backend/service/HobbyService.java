@@ -8,6 +8,7 @@ import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFound
 import io.github.csci499_group8.local_hobbies.backend.mapper.HobbyMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
 import io.github.csci499_group8.local_hobbies.backend.model.HobbyPhoto;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import io.github.csci499_group8.local_hobbies.backend.repository.GlobalHobbyRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyPhotoRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyRepository;
@@ -27,7 +28,6 @@ public class HobbyService {
     private final HobbyPhotoRepository hobbyPhotoRepository;
     private final GlobalHobbyRepository globalHobbyRepository;
     private final HobbyMapper hobbyMapper;
-    private final UserService userService;
     private final StorageService storageService;
 
     // --- methods called by HobbyController ---
@@ -135,26 +135,25 @@ public class HobbyService {
     @Transactional(readOnly = true)
     public List<HobbyOverlapResponse> getOverlappingHobbies(Integer currentUserId,
                                                             Integer otherUserId) {
-        userService.getUserByIdOrThrow(otherUserId);
+        //other user's existence has been validated by userService caller
 
-        //TODO: Custom SQL to find hobbies with the same name between two userIds
         return hobbyRepository.findOverlappingHobbies(currentUserId, otherUserId);
     }
 
     @Transactional
-    public void addOnboardingHobbies(Integer userId, UserOnboardingRequest request) {
+    public void addOnboardingHobbies(Integer userId, List<HobbyCreationRequest> requests) {
         //verify that hobbies are unique
-        Set<String> uniqueHobbies = request.hobbies().stream()
-                                           .map(HobbyCreationRequest::name)
-                                           .collect(Collectors.toSet());
-        if (uniqueHobbies.size() < request.hobbies().size()) {
+        Set<HobbyName> uniqueHobbies = requests.stream()
+                                               .map(HobbyCreationRequest::name)
+                                               .collect(Collectors.toSet());
+        if (uniqueHobbies.size() < requests.size()) {
             throw new IllegalArgumentException("Onboarding hobby list contains duplicate hobbies");
         }
 
-        List<Hobby> hobbies = request.hobbies().stream()
-                                     .map(req ->
-                                         hobbyMapper.toEntity(req, userId)
-                                     ).toList();
+        //save hobbies
+        List<Hobby> hobbies = requests.stream()
+                                      .map(req -> hobbyMapper.toEntity(req, userId))
+                                      .toList();
         hobbyRepository.saveAll(hobbies);
     }
 

@@ -1,5 +1,6 @@
 package io.github.csci499_group8.local_hobbies.backend.model;
 
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import jakarta.persistence.*;
 import lombok.*;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
@@ -29,15 +30,18 @@ public class SavedMatch {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MatchStatus status;
+    @Builder.Default
+    private MatchStatus status = MatchStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "hobby_name", nullable = false)
-    private String hobbyName;
+    private HobbyName hobbyName;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "creation_time", nullable = false)
+    @Column(name = "creation_time", nullable = false, updatable = false)
+    @org.hibernate.annotations.CreationTimestamp
     private OffsetDateTime creationTime;
 
     public void softDelete() {

@@ -86,6 +86,6 @@ public class GlobalExceptionHandler {
                                             message,
                                             OffsetDateTime.now(),
                                             request.getRequestURI());
-        return new ResponseEntity<>(error, status);
+        return ResponseEntity.status(status).body(error);
     }
 }

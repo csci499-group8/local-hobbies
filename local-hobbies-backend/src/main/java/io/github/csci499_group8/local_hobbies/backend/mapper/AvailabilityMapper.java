@@ -4,43 +4,66 @@ import io.github.csci499_group8.local_hobbies.backend.dto.availability.*;
 import io.github.csci499_group8.local_hobbies.backend.model.AvailabilityException;
 import io.github.csci499_group8.local_hobbies.backend.model.OneTimeAvailability;
 import io.github.csci499_group8.local_hobbies.backend.model.RecurringAvailability;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityType;
 import io.github.csci499_group8.local_hobbies.backend.service.AvailabilityInterval;
 import org.locationtech.jts.geom.Point;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.MappingTarget;
 
 import java.time.*;
-import java.util.List;
 
 @Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        imports = {AvailabilityType.class})
-public interface AvailabilityMapper {
+        imports = {AvailabilityType.class},
+        uses = { JsonNullableMapper.class, LocationMapper.class })
+public abstract class AvailabilityMapper {
 
     // --- toEntity mappings ---
 
-    OneTimeAvailability toEntity(OneTimeAvailabilityCreationRequest request, Integer userId);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "location", source = "request.location") //automatically maps by calling LocationMapper method
+    public abstract OneTimeAvailability toEntity(OneTimeAvailabilityCreationRequest request, Integer userId);
 
-    void updateEntity(OneTimeAvailabilityUpdateRequest request, OneTimeAvailability availability);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "location", source = "request.location") //automatically maps by calling LocationMapper method
+    public abstract RecurringAvailability toEntity(RecurringAvailabilityCreationRequest request, Integer userId);
 
-    RecurringAvailability toEntity(RecurringAvailabilityCreationRequest request, Integer userId);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "overrideLocation", source = "request.overrideLocation") //automatically maps by calling LocationMapper method
+    public abstract AvailabilityException toEntity(AvailabilityExceptionCreationRequest request, Integer userId);
 
-    void updateEntity(RecurringAvailabilityUpdateRequest request, RecurringAvailability availability);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "overrideLocation", source = "request.overrideLocation") //automatically maps by calling LocationMapper method
+    public abstract AvailabilityException toEntity(AvailabilityExceptionOnboardingCreationRequest request,
+                                   Integer userId, Integer recurringAvailabilityId);
 
-    AvailabilityException toEntity(AvailabilityExceptionCreationRequest request, Integer userId);
+    // --- updateEntity mappings ---
 
-    AvailabilityException toEntity(AvailabilityExceptionOnboardingCreationRequest request, Integer userId, Integer sourceAvailabilityId);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
+    public abstract void updateEntity(OneTimeAvailabilityUpdateRequest request, @MappingTarget OneTimeAvailability availability);
 
-    void updateEntity(AvailabilityExceptionUpdateRequest request, AvailabilityException availability);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "timeZoneId", ignore = true)
+    public abstract void updateEntity(RecurringAvailabilityUpdateRequest request, @MappingTarget RecurringAvailability availability);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "cancelled", source = "isCancelled") //JavaBeans omits "is" from property names
+    public abstract void updateEntity(AvailabilityExceptionUpdateRequest request, @MappingTarget AvailabilityException exception);
 
     // --- toResponse mappings ---
 
-    OneTimeAvailabilityResponse toOneTimeResponse(OneTimeAvailability save);
+    @Mapping(target = "location", source = "location") //automatically maps by calling LocationMapper method
+    public abstract OneTimeAvailabilityResponse toOneTimeResponse(OneTimeAvailability availability);
 
-    RecurringAvailabilityResponse toRecurringResponse(RecurringAvailability save);
+    @Mapping(target = "location", source = "location") //automatically maps by calling LocationMapper method
+    public abstract RecurringAvailabilityResponse toRecurringResponse(RecurringAvailability availability);
 
-    AvailabilityExceptionResponse toExceptionResponse(AvailabilityException save);
+    @Mapping(target = "isCancelled", source = "cancelled") //JavaBeans omits "is" from property names
+    @Mapping(target = "overrideLocation", source = "overrideLocation") //automatically maps by calling LocationMapper method
+    public abstract AvailabilityExceptionResponse toExceptionResponse(AvailabilityException exception);
 
     // --- toInterval mappings for conflict checking ---
 
@@ -49,15 +72,15 @@ public interface AvailabilityMapper {
     @Mapping(target = "location", source = "location")
     @Mapping(target = "start", source = "start")
     @Mapping(target = "end",  expression = "java(calculateEndOffsetDateTime(availability.getStart(), availability.getDuration()))")
-    AvailabilityInterval toInterval(OneTimeAvailability availability);
+    public abstract AvailabilityInterval toInterval(OneTimeAvailability availability);
 
     /**
      * Map an occurrence of a RecurringAvailability to an AvailabilityInterval.
      */
-    default AvailabilityInterval toInterval(RecurringAvailability availability, LocalDate occurrence) {
+    public AvailabilityInterval toInterval(RecurringAvailability availability, LocalDate occurrence) {
         OffsetDateTime start = calculateOffsetDateTime(occurrence,
                                                        availability.getStartTime(),
-                                                       availability.getZoneId());
+                                                       ZoneId.of(availability.getTimeZoneId()));
         OffsetDateTime end = calculateEndOffsetDateTime(start, availability.getDuration());
 
         return new AvailabilityInterval(AvailabilityType.RECURRING,
@@ -70,8 +93,8 @@ public interface AvailabilityMapper {
     /**
      * Map an AvailabilityException to an AvailabilityInterval.
      */
-    default AvailabilityInterval toInterval(AvailabilityException exception,
-                                            RecurringAvailability recurringAvailability) {
+    public AvailabilityInterval toInterval(AvailabilityException exception,
+                                    RecurringAvailability recurringAvailability) {
         Point location = exception.getOverrideLocation() != null
                 ? exception.getOverrideLocation()
                 : recurringAvailability.getLocation();
@@ -83,7 +106,7 @@ public interface AvailabilityMapper {
                 : recurringAvailability.getDuration();
 
         OffsetDateTime start = calculateOffsetDateTime(exception.getExceptionDate(), startTime,
-                                                       recurringAvailability.getZoneId());
+                                                       ZoneId.of(recurringAvailability.getTimeZoneId()));
         OffsetDateTime end = calculateEndOffsetDateTime(start, duration);
 
         return new AvailabilityInterval(AvailabilityType.EXCEPTION,
@@ -93,35 +116,16 @@ public interface AvailabilityMapper {
                                         end);
     }
 
-//    @Mapping(target = "sourceType", expression = "java(AvailabilityType.ONE_TIME)")
-//    @Mapping(target = "sourceId", ignore = true)
-//    @Mapping(target = "location", source = "location")
-//    @Mapping(target = "start", source = "start")
-//    @Mapping(target = "end", expression = "java(calculateEndOffsetDateTime(request.getStart(), request.getDuration()))")
-//    AvailabilityInterval toInterval(OneTimeAvailabilityCreationRequest request);
-//
-//    @Mapping(target = "sourceType", expression = "java(AvailabilityType.ONE_TIME)")
-//    @Mapping(target = "sourceId", source = "")
-//    @Mapping(target = "location", source = "location")
-//    @Mapping(target = "start", source = "start")
-//    @Mapping(target = "end", expression = "java(calculateEndOffsetDateTime(request.getStart(), request.getDuration()))")
-//    AvailabilityInterval toInterval(OneTimeAvailabilityUpdateRequest request);
-//
-//    AvailabilityInterval toInterval(RecurringAvailabilityCreationRequest request);
-//
-//    AvailabilityInterval toInterval(RecurringAvailabilityUpdateRequest request);
-//
-//    AvailabilityInterval toInterval(AvailabilityExceptionCreationRequest request);
-//
-//    AvailabilityInterval toInterval(AvailabilityExceptionUpdateRequest request);
+    @Mapping(target = "location", source = "location") //automatically maps by calling LocationMapper method
+    public abstract AvailabilityIntervalResponse toIntervalResponse(AvailabilityInterval interval);
 
     // --- private helper methods ---
 
-    private OffsetDateTime calculateOffsetDateTime(LocalDate date, LocalTime time, ZoneId zoneId) {
+    protected OffsetDateTime calculateOffsetDateTime(LocalDate date, LocalTime time, ZoneId zoneId) {
         return date.atTime(time).atZone(zoneId).toOffsetDateTime();
     }
 
-    private OffsetDateTime calculateEndOffsetDateTime(OffsetDateTime start, Duration duration) {
+    protected OffsetDateTime calculateEndOffsetDateTime(OffsetDateTime start, Duration duration) {
         return start.plus(duration);
     }
 

@@ -40,6 +40,8 @@ public class AuthService {
                 .filter(u -> passwordEncoder.matches(loginRequest.password(), u.getPassword()))
                 .orElseThrow(() -> new UnauthorizedException("Invalid username or password"));
 
+        user = userService.updateLastSessionTime(user);
+
         return generateAuthResponse(user);
     }
 
@@ -54,7 +56,6 @@ public class AuthService {
         Claims claims = tokenService.parseToken(token);
         OffsetDateTime expirationTime = claims.getExpiration().toInstant().atOffset(ZoneOffset.UTC);
 
-        //TODO: use a mapper class?
         AuthResponse.Auth auth = new AuthResponse.Auth(token,
                                                        "Bearer ",
                                                        expirationTime,

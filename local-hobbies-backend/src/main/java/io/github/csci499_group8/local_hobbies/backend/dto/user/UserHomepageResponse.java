@@ -16,7 +16,7 @@ public record UserHomepageResponse (
     public record UserSummary(
         @NotNull Integer id,
         @NotBlank String name,
-        String profilePhotoUrl
+        String profilePhotoUrl //nullable
     ) {}
 
     /**

@@ -5,30 +5,41 @@ import io.github.csci499_group8.local_hobbies.backend.model.GlobalHobby;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
 import io.github.csci499_group8.local_hobbies.backend.model.HobbyPhoto;
 import org.mapstruct.Mapper;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring",
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface HobbyMapper {
+        uses = { JsonNullableMapper.class })
+public abstract class HobbyMapper {
 
     // --- toEntity mappings ---
 
-    //TODO: fill out annotations
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "hobbyName", source = "request.name")
+    public abstract Hobby toEntity(HobbyCreationRequest request, Integer userId);
 
-    Hobby toEntity(HobbyCreationRequest request, Integer userId);
+    @Mapping(target = "id", ignore = true)
+    public abstract HobbyPhoto toPhotoEntity(HobbyPhotoCreationRequest request, Integer hobbyId);
 
-    void updateEntity(HobbyUpdateRequest request, Hobby hobby);
+    // --- updateEntity mappings ---
 
-    HobbyPhoto toPhotoEntity(HobbyPhotoCreationRequest request, Integer userId);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
+    @Mapping(target = "hobbyName", ignore = true)
+    public abstract void updateEntity(HobbyUpdateRequest request, @MappingTarget Hobby hobby);
 
-    void updatePhotoEntity(HobbyPhotoUpdateRequest request, HobbyPhoto photo);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "photoUrl", ignore = true)
+    public abstract void updatePhotoEntity(HobbyPhotoUpdateRequest request, @MappingTarget HobbyPhoto photo);
 
     // --- toResponse mappings ---
 
-    HobbyResponse toResponse(Hobby hobby);
+    @Mapping(target = "name", source = "hobbyName")
+    @Mapping(target = "category", source = "hobbyName.category")
+    public abstract HobbyResponse toResponse(Hobby hobby);
 
-    GlobalHobbyResponse toGlobalResponse(GlobalHobby globalHobby);
+    public abstract GlobalHobbyResponse toGlobalResponse(GlobalHobby globalHobby);
 
-    HobbyPhotoResponse toPhotoResponse(HobbyPhoto hobbyPhoto);
+    public abstract HobbyPhotoResponse toPhotoResponse(HobbyPhoto hobbyPhoto);
 
 }

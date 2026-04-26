@@ -14,6 +14,8 @@ import io.github.csci499_group8.local_hobbies.backend.dto.user.UserHomepageRespo
 import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFoundException;
 import io.github.csci499_group8.local_hobbies.backend.mapper.UserMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
+import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,6 +23,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +35,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final HobbyService hobbyService;
     private final AvailabilityService availabilityService;
-    private final MatchService matchService;
+    private final SavedMatchRepository savedMatchRepository;
     private final StorageService storageService;
     private final LocationService locationService;
     private final UserMapper userMapper;
@@ -52,7 +55,13 @@ public class UserService {
         }
 
         String passwordHash = passwordEncoder.encode(request.password());
-        User user = userMapper.toEntity(request, passwordHash);
+        User user = userMapper.toEntity(request, passwordHash, OffsetDateTime.now());
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateLastSessionTime(User user) {
+        user.setLastSessionTime(OffsetDateTime.now());
         return userRepository.save(user);
     }
 
@@ -67,11 +76,21 @@ public class UserService {
     @Transactional
     public User processOnboarding(Integer userId, UserOnboardingRequest request) {
         User user = getUserByIdOrThrow(userId);
-        String locationApproximate = getApproximateLocation(request.location());
+
+        String locationApproximate = null;
+        if (request.location() != null && request.location().isPresent()) {
+            locationApproximate = getApproximateLocation(request.location().get());
+        }
+
         userMapper.updateEntity(request, locationApproximate, user);
 
-        hobbyService.addOnboardingHobbies(userId, request);
-        availabilityService.addOnboardingAvailabilities(userId, request);
+        if (request.hobbies() != null && request.hobbies().isPresent()) {
+            hobbyService.addOnboardingHobbies(userId, request.hobbies().get());
+        }
+
+        if (request.availabilities() != null && request.availabilities().isPresent()) {
+            availabilityService.addOnboardingAvailabilities(userId, request.availabilities().get());
+        }
 
         user.setOnboardingComplete(checkOnboardingCompletion(user));
 
@@ -112,6 +131,14 @@ public class UserService {
             incompleteSections.add(new UserOnboardingIncompleteSection(
                 SectionName.genderMatched, IncompleteReason.noValue));
         }
+        if (user.getShowAge() == null) {
+            incompleteSections.add(new UserOnboardingIncompleteSection(
+                SectionName.showAge, IncompleteReason.noValue));
+        }
+        if (user.getShowGenderDisplayed() == null) {
+            incompleteSections.add(new UserOnboardingIncompleteSection(
+                SectionName.showGenderDisplayed, IncompleteReason.noValue));
+        }
 
         //minCountNotMet checks
         long hobbyCount = hobbyService.getHobbyCount(userId);
@@ -135,7 +162,12 @@ public class UserService {
     @Transactional
     public UserResponse updateUser(Integer userId, UserUpdateRequest request) {
         User user = getUserByIdOrThrow(userId);
-        String locationApproximate = getApproximateLocation(request.location());
+
+        String locationApproximate = null;
+        if (request.location() != null && request.location().isPresent()) {
+            locationApproximate = getApproximateLocation(request.location().get());
+        }
+
         userMapper.updateEntity(request, locationApproximate, user);
 
         return userMapper.toResponse(userRepository.save(user));
@@ -168,7 +200,8 @@ public class UserService {
                                                   user.getName(),
                                                   user.getProfilePhotoUrl());
         HobbySummary hobbySummary = new HobbySummary(hobbyService.getHobbyCount(userId));
-        MatchSummary matchSummary = new MatchSummary(matchService.getMatchCount(userId));
+        MatchSummary matchSummary =
+            new MatchSummary(savedMatchRepository.countByUserIdAndStatus(userId, MatchStatus.ACTIVE));
 
         return new UserHomepageResponse(userSummary,
                                         hobbySummary,
@@ -187,16 +220,18 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public OtherUserProfileResponse getOtherUserProfile(Integer currentUserId, Integer otherUserId) {
-        UserResponse otherUser = userMapper.toResponse(getUserByIdOrThrow(otherUserId));
+        User otherUser = getUserByIdOrThrow(otherUserId);
 
         List<HobbyResponse> otherUserHobbies = hobbyService.getHobbiesByUserId(otherUserId);
         List<HobbyPhotoResponse> otherUserHobbyPhotos = hobbyService.getHobbyPhotosByUserId(otherUserId);
 
-        boolean isSavedMatch = matchService.isSavedMatch(currentUserId, otherUserId);
-        List<HobbyOverlapResponse> overlappingHobbies = hobbyService
-                .getOverlappingHobbies(currentUserId, otherUserId);
-        List<AvailabilityOverlapResponse> overlappingAvailabilities = availabilityService
-                .getOverlappingAvailabilities(currentUserId, otherUserId);
+        boolean isSavedMatch = savedMatchRepository.existsByUserIdAndSavedUserIdAndStatus(currentUserId,
+                                                                                          otherUserId,
+                                                                                          MatchStatus.ACTIVE);
+        List<HobbyOverlapResponse> overlappingHobbies =
+            hobbyService.getOverlappingHobbies(currentUserId, otherUserId);
+        List<AvailabilityOverlapResponse> overlappingAvailabilities =
+            availabilityService.getOverlappingAvailabilities(currentUserId, otherUserId);
 
         return userMapper.toOtherProfileResponse(otherUser, otherUserHobbies, otherUserHobbyPhotos,
                                                  isSavedMatch, overlappingHobbies, overlappingAvailabilities);
@@ -238,7 +273,7 @@ public class UserService {
     }
 
     private String getApproximateLocation(GeoJsonPoint locationPoint) {
-        return locationService.getCityFromPoint(locationPoint.getLongitude(), locationPoint.getLatitude());
+        return locationService.getCityFromGeoJsonPoint(locationPoint);
     }
 
 }

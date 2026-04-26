@@ -18,10 +18,10 @@ import static io.github.csci499_group8.local_hobbies.backend.config.Availability
  * on JSON nesting to associate with recurring availability
  */
 public record AvailabilityExceptionOnboardingCreationRequest (
-        @NotNull @WithinDays(SCHEDULING_WINDOW_DAYS) LocalDate exceptionDate,
-        @NotNull String exceptionReason,
-        @NotNull boolean isCancelled,
-        @Valid GeoJsonPoint overrideLocation, //omitted if isCancelled = true
-        LocalTime overrideStartTime, //omitted if isCancelled = true
-        @MaxDurationHours(MAX_DURATION_HOURS) Duration overrideDuration //omitted if isCancelled = true
+    @NotNull @WithinDays(SCHEDULING_WINDOW_DAYS) LocalDate exceptionDate,
+    @NotNull String exceptionReason,
+    @NotNull boolean isCancelled,
+    @Valid GeoJsonPoint overrideLocation, //omitted or null if isCancelled = true
+    LocalTime overrideStartTime, //omitted or null if isCancelled = true
+    @MaxDurationHours(MAX_DURATION_HOURS) Duration overrideDuration //omitted or null if isCancelled = true
 ) {}

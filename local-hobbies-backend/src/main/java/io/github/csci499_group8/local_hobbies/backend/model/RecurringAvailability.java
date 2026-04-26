@@ -4,6 +4,8 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityFr
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.validation.MaxDurationHours;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.*;
@@ -49,6 +51,7 @@ public class RecurringAvailability implements UserOwned {
     @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
+    @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
     @Column(nullable = false)
     @MaxDurationHours(MAX_DURATION_HOURS)
     private Duration duration;

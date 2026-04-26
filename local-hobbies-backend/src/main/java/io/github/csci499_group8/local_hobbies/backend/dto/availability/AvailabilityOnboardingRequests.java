@@ -13,11 +13,11 @@ import java.util.List;
  *                                 AvailabilityException creation requests
  */
 public record AvailabilityOnboardingRequests(
-    @Valid @NotNull List<OneTimeAvailabilityCreationRequest> oneTimes,
-    @Valid @NotNull List<RecurringAvailabilityWithExceptions> recurringsWithExceptions
+    @Valid @NotNull List<OneTimeAvailabilityCreationRequest> oneTimes, //may be empty
+    @Valid @NotNull List<RecurringAvailabilityWithExceptions> recurringsWithExceptions //may be empty
 ) {
     public record RecurringAvailabilityWithExceptions(
         @Valid @NotNull RecurringAvailabilityCreationRequest recurring,
-        @Valid @NotNull List<AvailabilityExceptionOnboardingCreationRequest> exceptions
+        @Valid @NotNull List<AvailabilityExceptionOnboardingCreationRequest> exceptions //may be empty
     ) {}
 }

@@ -31,9 +31,8 @@ import static io.github.csci499_group8.local_hobbies.backend.service.LocationSer
 @RequiredArgsConstructor
 public class AvailabilityService {
 
-    //TODO: add ruleStart < ruleEnd verification to RecurringAvailability
-    //TODO: add verification to Recurring update that update duration <= 1 week
-    //TODO: after converting OneTime duration (Duration) to end (timestamp), add verification to update that updated duration <= 1 week
+    //TODO: validate ruleStart < ruleEnd when updating RecurringAvailability
+//    after converting OneTime duration (Duration) to end (timestamp), add verification to update that updated duration <= 1 week
 
     private final OneTimeAvailabilityRepository oneTimeRepository;
     private final RecurringAvailabilityRepository recurringRepository;
@@ -46,9 +45,11 @@ public class AvailabilityService {
 
     @Transactional(readOnly = true)
     public ScheduleResponse getSchedule(Integer userId) {
-        List<AvailabilityInterval> intervals = projectScheduleToIntervals(
-                userId, LocalDate.now(), LocalDate.now().plusDays(SCHEDULING_WINDOW_DAYS)
-        );
+        List<AvailabilityIntervalResponse> intervals =
+            projectScheduleToIntervals(userId, LocalDate.now(), LocalDate.now().plusDays(SCHEDULING_WINDOW_DAYS))
+            .stream()
+            .map(availabilityMapper::toIntervalResponse)
+            .toList();
 
         ScheduleResponse.Availabilities availabilities = new ScheduleResponse.Availabilities(
                 oneTimeRepository.findAllByUserId(userId).stream()
@@ -179,18 +180,18 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public void addOnboardingAvailabilities(Integer userId, UserOnboardingRequest request) {
-        verifyNoConflictsOnboarding(userId, request);
+    public void addOnboardingAvailabilities(Integer userId, AvailabilityOnboardingRequests requests) {
+        verifyNoConflictsOnboarding(userId, requests);
 
         //save availabilities to database
 
-        List<OneTimeAvailability> oneTimes = request.availabilities().oneTimes().stream()
-                                                    .map(req -> availabilityMapper.toEntity(req, userId))
-                                                    .toList();
+        List<OneTimeAvailability> oneTimes = requests.oneTimes().stream()
+                                                                 .map(req -> availabilityMapper.toEntity(req, userId))
+                                                                 .toList();
         oneTimeRepository.saveAll(oneTimes);
 
         for (AvailabilityOnboardingRequests.RecurringAvailabilityWithExceptions recWithExcRequest
-                : request.availabilities().recurringsWithExceptions()) {
+                : requests.recurringsWithExceptions()) {
             RecurringAvailability recurring = availabilityMapper.toEntity(recWithExcRequest.recurring(), userId);
 
             Integer recurringId = recurringRepository.save(recurring).getId();
@@ -209,12 +210,12 @@ public class AvailabilityService {
                 projectScheduleToIntervals(currentUserId, LocalDate.now(), LocalDate.now().plusDays(OVERLAP_WINDOW_DAYS));
         List<AvailabilityInterval> otherUserAvailabilities =
                 projectScheduleToIntervals(otherUserId, LocalDate.now(), LocalDate.now().plusDays(OVERLAP_WINDOW_DAYS));
-        
-        
+
+
         List<AvailabilityOverlapResponse> overlaps = new ArrayList<>();
         int currIndex = 0;
         int otherIndex = 0;
-        
+
         while (currIndex < currentUserAvailabilities.size() && otherIndex < otherUserAvailabilities.size()) {
             AvailabilityInterval currInterval = currentUserAvailabilities.get(currIndex);
             AvailabilityInterval otherInterval = otherUserAvailabilities.get(otherIndex);
@@ -430,15 +431,15 @@ public class AvailabilityService {
         return occurrences;
     }
 
-    private void verifyNoConflictsOnboarding(Integer userId, UserOnboardingRequest request) {
+    private void verifyNoConflictsOnboarding(Integer userId, AvailabilityOnboardingRequests requests) {
 
         //project requests to intervals
 
-        Stream<AvailabilityInterval> oneTimes = request.availabilities().oneTimes().stream()
-                                                       .map(oneTime -> availabilityMapper.toEntity(oneTime, userId))
-                                                       .map(availabilityMapper::toInterval);
+        Stream<AvailabilityInterval> oneTimes = requests.oneTimes().stream()
+                                                        .map(oneTime -> availabilityMapper.toEntity(oneTime, userId))
+                                                        .map(availabilityMapper::toInterval);
 
-        Stream<AvailabilityInterval> recurrings = request.availabilities().recurringsWithExceptions().stream().flatMap(
+        Stream<AvailabilityInterval> recurrings = requests.recurringsWithExceptions().stream().flatMap(
                  recWithExc -> {
                      RecurringAvailability recurring = availabilityMapper.toEntity(recWithExc.recurring(), userId);
                      Map<LocalDate, AvailabilityException> exceptionMap =

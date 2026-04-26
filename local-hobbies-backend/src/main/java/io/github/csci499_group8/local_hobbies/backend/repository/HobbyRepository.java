@@ -2,6 +2,7 @@ package io.github.csci499_group8.local_hobbies.backend.repository;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyOverlapResponse;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,6 +33,6 @@ public interface HobbyRepository extends JpaRepository<Hobby, Integer> {
     List<HobbyOverlapResponse> findOverlappingHobbies(@Param("currentUserId") Integer currentUserId,
                                                       @Param("otherUserId") Integer otherUserId);
 
-    boolean existsByUserIdAndHobbyName(Integer userId, String name);
+    boolean existsByUserIdAndHobbyName(Integer userId, HobbyName name);
 
 }

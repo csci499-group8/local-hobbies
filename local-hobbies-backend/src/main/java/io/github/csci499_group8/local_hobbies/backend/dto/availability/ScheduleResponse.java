@@ -6,16 +6,17 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
+/**
+ * Lists of all of a user's Availability objects, and the flattened AvailabilityIntervals
+ * they are projected to
+ */
 public record ScheduleResponse(
-        @NotNull List<AvailabilityInterval> intervals,
+        @NotNull List<AvailabilityIntervalResponse> intervals, //may be empty
         @NotNull Availabilities availabilities
 ) {
-    /**
-     * Availability objects that AvailabilityIntervals map to
-     */
     public record Availabilities(
-        @Valid @NotNull List<OneTimeAvailabilityResponse> oneTimes,
-        @Valid @NotNull List<RecurringAvailabilityResponse> recurrings,
-        @Valid @NotNull List<AvailabilityExceptionResponse> exceptions
+        @Valid @NotNull List<OneTimeAvailabilityResponse> oneTimes, //may be empty
+        @Valid @NotNull List<RecurringAvailabilityResponse> recurrings, //may be empty
+        @Valid @NotNull List<AvailabilityExceptionResponse> exceptions //may be empty
     ) {}
 }

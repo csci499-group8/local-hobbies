@@ -5,7 +5,6 @@ import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthSignupRequest;
 import io.github.csci499_group8.local_hobbies.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -4,7 +4,9 @@ import io.github.csci499_group8.local_hobbies.backend.exception.UnauthorizedExce
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -13,9 +15,14 @@ import java.util.Date;
 @Service
 public class TokenService {
 
+    private final SecretKey key;
+
     //TODO: move SECRET_KEY value to environment variable
-    private final String SECRET_KEY = "256-bit-secret-key-string";
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    public TokenService(@Value("${app.jwt.secret:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LXdpdGgtZW5vdWdoLWJpdHMtc2VjdXJpdHk=}") String secret) {
+        // Decodes a Base64 encoded string from your properties/env
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public String generateToken(String userId) {
         long oneDayInMs = 1000 * 60 * 60 * 24;

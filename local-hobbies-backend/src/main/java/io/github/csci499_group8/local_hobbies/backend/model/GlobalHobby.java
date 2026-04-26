@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.model;
 
 import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyCategory;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,7 +15,8 @@ import lombok.*;
 public class GlobalHobby {
 
     @Id
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private HobbyName name;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

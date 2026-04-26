@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/hobbies")
+@RequestMapping("/api/hobbies")
 @RequiredArgsConstructor
 @Validated
 public class HobbyController {
 
     private final HobbyService hobbyService;
-    
+
     // --- user hobbies ---
 
     @GetMapping
@@ -35,7 +35,7 @@ public class HobbyController {
             @RequestAttribute("userId") Integer userId,
             @Valid @RequestBody HobbyCreationRequest request) {
         HobbyResponse response = hobbyService.addHobby(userId, request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{hobbyId}")
@@ -83,7 +83,7 @@ public class HobbyController {
             @PathVariable @Positive Integer hobbyId,
             @Valid @RequestBody HobbyPhotoCreationRequest request) {
         HobbyPhotoResponse response = hobbyService.addHobbyPhoto(userId, hobbyId, request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/photos/{photoId}")

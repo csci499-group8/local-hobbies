@@ -1,8 +1,9 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.hobby;
 
+import io.github.csci499_group8.local_hobbies.backend.dto.validation.NotNullIfPresent;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienceLevel;
-import jakarta.validation.constraints.NotNull;
+import org.openapitools.jackson.nullable.JsonNullable;
 
 public record HobbyUpdateRequest(
-    @NotNull HobbyExperienceLevel experienceLevel
+    @NotNullIfPresent JsonNullable<HobbyExperienceLevel> experienceLevel
 ) {}

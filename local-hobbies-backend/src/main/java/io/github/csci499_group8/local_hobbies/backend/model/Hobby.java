@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.model;
 
 import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienceLevel;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,8 +28,9 @@ public class Hobby {
     @Column(name = "user_id", nullable = false)
     private Integer userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "hobby_name", nullable = false)
-    private String hobbyName;
+    private HobbyName hobbyName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "experience_level", nullable = false)

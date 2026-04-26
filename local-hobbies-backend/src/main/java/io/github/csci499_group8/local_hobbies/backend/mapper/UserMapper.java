@@ -2,28 +2,22 @@ package io.github.csci499_group8.local_hobbies.backend.mapper;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthSignupRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityOverlapResponse;
-import io.github.csci499_group8.local_hobbies.backend.dto.common.GeoJsonPoint;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyOverlapResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyPhotoResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.user.*;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
-import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.Period;
 import java.util.List;
 
 @Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-@RequiredArgsConstructor
+        imports = { LocalDate.class, Period.class },
+        uses = { JsonNullableMapper.class, LocationMapper.class })
 public abstract class UserMapper {
-
-    private final GeometryFactory geometryFactory;
 
     // --- toEntity mappings ---
 
@@ -32,18 +26,24 @@ public abstract class UserMapper {
     @Mapping(target = "username", source = "request.username")
     @Mapping(target = "password", source = "passwordHash")
     @Mapping(target = "email", source = "request.email")
-    public abstract User toEntity(AuthSignupRequest request, String passwordHash);
+    @Mapping(target = "lastSessionTime", source = "creationTime")
+    public abstract User toEntity(AuthSignupRequest request, String passwordHash, OffsetDateTime creationTime);
 
     // --- updateEntity mappings ---
 
     //onboarding request updates user
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "birthDate", source = "birthDate")
-    @Mapping(target = "locationPoint", expression = "java(mapLocationPoint(request.location()))")
-    @Mapping(target = "publicContactInfo", source = "publicContactInfo")
-    @Mapping(target = "genderMatched", source = "genderMatched")
-    public abstract void updateEntity(UserOnboardingRequest request, String locationApproximate, @MappingTarget User user);
+    @Mapping(target = "name", source = "request.name")
+    @Mapping(target = "birthDate", source = "request.birthDate")
+    @Mapping(target = "locationPoint", source = "request.location") //automatically maps by calling LocationMapper method
+    @Mapping(target = "locationApproximate", source = "locationApproximate")
+    @Mapping(target = "publicContactInfo", source = "request.publicContactInfo")
+    @Mapping(target = "genderMatched", source = "request.genderMatched")
+    @Mapping(target = "showAge", source = "request.showAge")
+    @Mapping(target = "showGenderDisplayed", source = "request.showGenderDisplayed")
+    public abstract void updateEntity(UserOnboardingRequest request,
+                                      String locationApproximate,
+                                      @MappingTarget User user);
 
     //update request updates user
     @Mapping(target = "id", ignore = true)
@@ -51,48 +51,46 @@ public abstract class UserMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "lastSessionTime", ignore = true)
     @Mapping(target = "onboardingComplete", ignore = true)
-    @Mapping(target = "locationPoint", expression = "java(mapLocationPoint(request.location()))")
-    public abstract void updateEntity(UserUpdateRequest request, String locationApproximate, @MappingTarget User user);
+    @Mapping(target = "locationPoint", source = "request.location") //automatically maps by calling LocationMapper method
+    @Mapping(target = "locationApproximate", source = "locationApproximate")
+    public abstract void updateEntity(UserUpdateRequest request,
+                                      String locationApproximate,
+                                      @MappingTarget User user);
 
     // --- toResponse mappings ---
 
     //user maps to user response
+    @Mapping(target = "locationPoint", source = "user.locationPoint") //automatically maps by calling LocationMapper method
     public abstract UserResponse toResponse(User user);
 
     //user + hobby info maps to current user profile response
     @Mapping(target = "age", expression = "java(mapAge(user))")
-    @Mapping(target = "genderDisplayed", expression = "java(mapGender(user))")
+    @Mapping(target = "genderDisplayed", expression = "java(mapGenderDisplayed(user))")
     public abstract CurrentUserProfileResponse toCurrentProfileResponse(
         User user, List<HobbyResponse> hobbies, List<HobbyPhotoResponse> hobbyPhotos);
 
     //user + hobby info + overlap info maps to other user profile response
-    @Mapping(target = "age", expression = "java(mapAge(user))")
-    @Mapping(target = "genderDisplayed", expression = "java(mapGender(user))")
+    @Mapping(target = "age", expression = "java(mapAge(otherUser))")
+    @Mapping(target = "genderDisplayed", expression = "java(mapGenderDisplayed(otherUser))")
     public abstract OtherUserProfileResponse toOtherProfileResponse(
-            UserResponse otherUser, List<HobbyResponse> hobbies, List<HobbyPhotoResponse> hobbyPhotos,
+            User otherUser, List<HobbyResponse> hobbies, List<HobbyPhotoResponse> hobbyPhotos,
             boolean isSavedMatch, List<HobbyOverlapResponse> overlappingHobbies,
             List<AvailabilityOverlapResponse> overlappingAvailabilities);
 
     // --- private helper methods ---
 
-    private Point mapLocationPoint(GeoJsonPoint point) {
-        if (point.getLatitude() == null || point.getLongitude() == null) return null;
-        return geometryFactory.createPoint(new Coordinate(point.getLongitude(), point.getLatitude()));
-    }
-
-    private Integer mapAge(User user) {
-        if (!user.isShowAge()) return null;
+    protected Integer mapAge(User user) {
+        if (!user.getShowAge()) return null;
         return Period.between(user.getBirthDate(), LocalDate.now()).getYears();
     }
 
-    private String mapGenderDisplayed(User user) {
-        if (!user.isShowGenderDisplayed()) return null;
+    protected String mapGenderDisplayed(User user) {
+        if (!user.getShowGenderDisplayed()) return null;
         return user.getGenderDisplayed();
     }
 
 }
 
-TODO:
 //TODO:
 /**
  * It is impossible to distinguish between empty fields and fields

@@ -33,9 +33,11 @@ public class User {
     @Column(name = "last_session_time", nullable = false)
     private OffsetDateTime lastSessionTime;
 
+    @Builder.Default
     @Column(name = "onboarding_complete", nullable = false)
     private boolean onboardingComplete = false;
 
+    @Column
     private String name;
 
     @Column(name = "birth_date")

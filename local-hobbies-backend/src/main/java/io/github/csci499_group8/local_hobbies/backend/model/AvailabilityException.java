@@ -3,6 +3,8 @@ package io.github.csci499_group8.local_hobbies.backend.model;
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.validation.MaxDurationHours;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.Duration;
@@ -47,6 +49,7 @@ public class AvailabilityException implements UserOwned {
     @Column(name = "override_start_time")
     private LocalTime overrideStartTime;
 
+    @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
     @Column(name = "override_duration")
     @MaxDurationHours(MAX_DURATION_HOURS)
     private Duration overrideDuration;

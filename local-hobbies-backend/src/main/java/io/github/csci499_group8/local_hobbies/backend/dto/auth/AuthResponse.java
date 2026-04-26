@@ -18,7 +18,7 @@ public record AuthResponse(
      */
     public record Auth(
         @NotBlank String accessToken,
-        @NotBlank String tokenType, // Example: "Bearer"
+        @NotBlank String tokenType, //e.g. "Bearer"
         @NotNull OffsetDateTime expirationTime,
         @NotBlank String refreshToken
     ) {}

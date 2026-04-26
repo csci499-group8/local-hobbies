@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/matches")
+@RequestMapping("/api/matches")
 @RequiredArgsConstructor
 @Validated
 public class MatchController {
@@ -37,8 +37,8 @@ public class MatchController {
     public ResponseEntity<SavedMatchResponse> saveMatch(
             @RequestAttribute("userId") Integer userId,
             @Valid @RequestBody SavedMatchCreationRequest request) {
-        SavedMatchResponse response = matchService.saveMatch(userId, request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        SavedMatchResponse response = matchService.createSavedMatch(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/saved/{matchId}")

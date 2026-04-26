@@ -249,7 +249,8 @@ paths:
       tags:
         - Users
       summary: Get current user's profile
-      description: Get current user's profile including public account information, hobbies, and photos. Fields that are set to private are returned as null.
+      description: Get current user's profile including public account information,
+        hobbies, and photos. Fields that are set to private are returned as null.
       responses:
         '200':
           description: Profile retrieved successfully
@@ -271,7 +272,8 @@ paths:
       tags:
         - Users
       summary: Get another user's public profile
-      description: Get another user's profile including public account information, hobbies, and photos, and matching information. Fields that are set to private are returned as null.
+      description: Get another user's profile including public account information, hobbies, and
+        photos, and matching information. Fields that are set to private are returned as null.
       parameters:
         - name: otherUserId
           in: path
@@ -405,7 +407,8 @@ paths:
       tags:
         - Hobbies
       summary: Get global hobbies
-      description: Get list of all hobbies users can select from. Hobbies are organized first by category, then by name.
+      description: Get list of all hobbies users can select from. Hobbies are
+        organized first by category, then by name.
       security: []
       responses:
         '200':
@@ -1201,7 +1204,8 @@ components:
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
           type: string
-          description: omitted if not changed or if update was attempted by user but photo upload failed; null if being removed from account
+          description: omitted if not changed or if update was attempted by user
+            but photo upload failed; null if being removed from account
           nullable: true
           example: https://example.com/photos/123.jpg
         showAge:
@@ -1219,7 +1223,8 @@ components:
         - name
         - birthDate
         - bio
-        - location
+        - locationPoint
+        - locationApproximate
         - publicContactInfo
         - profilePhotoUrl
         - genderMatched
@@ -1247,8 +1252,11 @@ components:
           type: string
           nullable: true
           example: Love hiking and coffee!
-        location:
+        locationPoint:
           $ref: '#/components/schemas/GeoJsonPoint'
+        locationApproximate:
+          type: string
+          example: San Francisco, CA
         publicContactInfo:
           type: string
           example: "@asmith123 on Instagram"
@@ -1454,8 +1462,6 @@ components:
 
     HobbyUpdateRequest:
       type: object
-      required:
-        - experienceLevel
       properties:
         experienceLevel:
           type: string
@@ -1494,6 +1500,8 @@ components:
           example: https://example.com/photos/123/hobby135.jpg
         caption:
           type: string
+          nullable: true
+          description: may be omitted or null
           example: Had a great time!
 
     HobbyPhotoUpdateRequest:
@@ -1637,17 +1645,18 @@ components:
         ruleEnd:
           type: string
           format: date
-          description: omitted if rule continues indefinitely
+          nullable: true
+          description: omitted or null if rule continues indefinitely
           example: "2026-12-31"
         frequency:
           type: string
           enum: [Weekly, Every two weeks, Monthly]
           example: Weekly
         startDayOfWeek:
-          type: integer
-          minimum: 1
-          maximum: 7
-          description: ISO 8601 day of week (1=Monday, 7=Sunday; for weekly/every two weeks); omitted if startDayOfMonth is submitted
+          type: string
+          enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+          example: Tuesday
+          description: day of week (for weekly/every two weeks); omitted if startDayOfMonth is submitted
         startDayOfMonth:
           type: integer
           minimum: 1
@@ -1682,16 +1691,17 @@ components:
           enum: [Weekly, Every two weeks, Monthly]
           example: Weekly
         startDayOfWeek:
-          type: integer
-          minimum: 1
-          maximum: 7
-          description: ISO 8601 day of week (1=Monday, 7=Sunday; for weekly/every two weeks); omitted if startDayOfMonth is submitted
+          type: string
+          enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+          example: Tuesday
+          nullable: true
+          description: day of week (for weekly/every two weeks); null if startDayOfMonth is submitted and not null
         startDayOfMonth:
           type: integer
           minimum: 1
           maximum: 31
           nullable: true
-          description: day of month (for monthly); null if startDayOfWeek is not null
+          description: day of month (for monthly); null if startDayOfWeek is submitted and not null
         startTime:
           type: string
           format: time
@@ -1738,10 +1748,11 @@ components:
           enum: [Weekly, Every two weeks, Monthly]
           example: Weekly
         startDayOfWeek:
-          type: integer
-          minimum: 1
-          maximum: 7
-          description: ISO 8601 day of week (1=Monday, 7=Sunday; for weekly/every two weeks); null if startDayOfMonth is not null
+          type: string
+          enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+          example: Tuesday
+          nullable: true
+          description: day of week (for weekly/every two weeks); null if startDayOfMonth is not null
         startDayOfMonth:
           type: integer
           minimum: 1
@@ -1777,20 +1788,24 @@ components:
         isCancelled:
           type: boolean
         overrideLocation:
-          description: omitted if isCancelled = true
+          nullable: true
+          description: omitted or null if isCancelled = true
           allOf:
             - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
-          description: omitted if isCancelled = true
+          nullable: true
+          description: omitted or null if isCancelled = true
         overrideDuration:
           type: string
-          description: ISO 8601 duration; omitted if isCancelled = true
+          nullable: true
+          description: ISO 8601 duration; omitted or null if isCancelled = true
 
     AvailabilityExceptionOnboardingCreationRequest:
       type: object
-      description: request used during onboarding; omits recurringAvailabilityId, instead relying on JSON nesting to associate with recurring availability
+      description: request used during onboarding; omits recurringAvailabilityId,
+        instead relying on JSON nesting to associate with recurring availability
       required:
         - exceptionDate
         - exceptionReason
@@ -1806,16 +1821,19 @@ components:
         isCancelled:
           type: boolean
         overrideLocation:
-          description: omitted if isCancelled = true
+          nullable: true
+          description: omitted or null if isCancelled = true
           allOf:
             - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
-          description: omitted if isCancelled = true
+          nullable: true
+          description: omitted or null if isCancelled = true
         overrideDuration:
           type: string
-          description: ISO 8601 duration; omitted if isCancelled = true
+          nullable: true
+          description: ISO 8601 duration; omitted or null if isCancelled = true
 
     AvailabilityExceptionUpdateRequest:
       type: object
@@ -1931,7 +1949,7 @@ components:
         intervals:
           type: array
           items:
-            $ref: '#/components/schemas/AvailabilityInterval'
+            $ref: '#/components/schemas/AvailabilityIntervalResponse'
         availabilities:
           type: object
           required:
@@ -1952,7 +1970,7 @@ components:
               items:
                 $ref: '#/components/schemas/AvailabilityExceptionResponse'
 
-    AvailabilityInterval:
+    AvailabilityIntervalResponse:
       type: object
       properties:
         sourceType:
@@ -1972,7 +1990,7 @@ components:
           format: date-time
           description: ISO 8601 UTC timestamp
           example: "2026-02-09T10:00:00Z"
-        
+
     AvailabilityOverlapResponse:
       type: object
       required:
@@ -2028,8 +2046,6 @@ components:
         - radiusKilometers
         - minimumOverlapMinutes
         - filters
-        - hardFilters
-        - softFilters
       properties:
         hobby:
           type: string
@@ -2038,55 +2054,97 @@ components:
         radiusKilometers:
           type: integer
           minimum: 0
+          example: 10
         minimumOverlapMinutes:
           type: integer
           minimum: 0
+          example: 45
         filters:
-          type: object
+          type: array
+          description: list of the filters used in the search; 'type' indicates
+            what the filter's criteria are; 'isHard' indicates whether the filter
+            is mandatory or only for ranking results; the final field contains the
+            filter criteria and is dependent on 'type'
+          items:
+            $ref: '#/components/schemas/MatchSearchFilter'
+
+    MatchSearchFilter:
+      type: object
+      description: polymorphic search filter; 'type' dictates what the type of the
+        last field, the filter criteria, is
+      required:
+        - type
+        - isHard
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          type: string
+          enum: [GENDERS, MIN_AGE, MAX_AGE, EXPERIENCE_LEVEL]
+          example: MIN_AGE
+        isHard:
+          type: boolean
+          description: if true, excludes users not matching this filter; if false,
+            only used for ranking search results
+          example: true
+      oneOf:
+        - description: genderMatched genders
+          required:
+            - genders
           properties:
             genders:
               type: array
               items:
                 type: string
-                enum: [Man, Woman, Nonbinary]
+                enum: [Man, Nonbinary, Woman]
+                example: Nonbinary
+        - description: minimum age
+          required:
+            - minAge
+          properties:
             minAge:
               type: integer
               minimum: 13
+              example: 25
+        - description: maximum age
+          required:
+            - maxAge
+          properties:
             maxAge:
               type: integer
-              maximum: 120F
+              maximum: 120
+              example: 40
+        - description: experience level
+          required:
+            - experienceLevel
+          properties:
             experienceLevel:
               type: string
               enum: [Beginner, Intermediate, Advanced]
-        hardFilters:
-          type: array
-          items:
-            type: string
-          description: filters that the user asserts must be satisfied; must be a subset of the filters that were passed; cannot overlap with soft filters
-          example: ["genders", "minAge"]
-        softFilters:
-          type: array
-          items:
-            type: string
-          description: filters used for prioritizing results; must be a subset of the filters that were passed; cannot overlap with soft filters
-          example: ["experienceLevel"]
+              example: Advanced
 
     MatchSearchResultResponse:
       type: object
       required:
         - matchedUser
-        - hobby
+        - distanceType
         - distanceKilometers
         - overlappingAvailabilities
       properties:
         matchedUser:
           $ref: '#/components/schemas/MatchedUser'
-        hobby:
+        distanceType:
           type: string
-          example: Hiking
+          enum: [Home, Nearest overlapping availability]
+          description: category of the calculated shortest distance between the users;
+            "Home" indicates the shortest distance is between the users' default
+            locations; "Nearest overlapping availability" indicates the distance
+            is between the users' geographically closest overlapping availabilities
+          example: Nearest overlapping availability
         distanceKilometers:
           type: number
           format: double
+          description: value of the shortest distance between the users
           example: 4.3
         overlappingAvailabilities:
           type: array
@@ -2107,15 +2165,16 @@ components:
           example: Hiking
         notes:
           type: string
+          nullable: true
+          description: may be omitted or null
           example: Brings her dog on hikes
 
     SavedMatchUpdateRequest:
       type: object
-      required:
-        - notes
       properties:
         notes:
           type: string
+          nullable: true
           example: Brings her dog Max on hikes
 
     SavedMatchResponse:

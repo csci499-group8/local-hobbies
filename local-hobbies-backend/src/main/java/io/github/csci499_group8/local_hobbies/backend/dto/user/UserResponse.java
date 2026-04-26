@@ -14,11 +14,12 @@ public record UserResponse(
     @NotBlank String email,
     @NotBlank String name,
     @NotNull LocalDate birthDate,
-    String genderDisplayed,
-    String bio,
-    @Valid @NotNull GeoJsonPoint location,
+    String genderDisplayed, //nullable
+    String bio, //nullable
+    @Valid @NotNull GeoJsonPoint locationPoint,
+    @NotBlank String locationApproximate,
     @NotBlank String publicContactInfo,
-    String profilePhotoUrl,
+    String profilePhotoUrl, //nullable
     @NotNull UserGenderMatched genderMatched,
     @NotNull boolean showAge,
     @NotNull boolean showGenderDisplayed
