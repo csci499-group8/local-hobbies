@@ -13,34 +13,36 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Service
-public class TokenService {
+public class JwtService {
 
-    private final SecretKey key;
+    private final SecretKey secretKey;
+    private final long expirationMs;
 
-    //TODO: move SECRET_KEY value to environment variable
-    public TokenService(@Value("${app.jwt.secret:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LXdpdGgtZW5vdWdoLWJpdHMtc2VjdXJpdHk=}") String secret) {
-        // Decodes a Base64 encoded string from your properties/env
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        this.key = Keys.hmacShaKeyFor(keyBytes);
+    public JwtService(
+            @Value("${application.security.jwt.secret-key}") String secretKeyString,
+            @Value("${application.security.jwt.expiration-ms}") long expirationMs) {
+        //convert Base64-encoded string to key
+        this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
+        this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String userId) {
-        long oneDayInMs = 1000 * 60 * 60 * 24;
+    public String generateToken(String userId, boolean onboardingComplete) {
         Date now = new Date();
-        Date expirationTime = new Date(now.getTime() + oneDayInMs); //expires in one day
+        Date expirationTime = new Date(System.currentTimeMillis() + expirationMs);
 
         return Jwts.builder()
+                   .claim("onboardingComplete", onboardingComplete)
                    .subject(userId)
                    .issuedAt(now)
                    .expiration(expirationTime)
-                   .signWith(key)
+                   .signWith(secretKey)
                    .compact();
     }
 
     public Claims parseToken(String token) {
         try {
             return Jwts.parser()
-                       .verifyWith(key)
+                       .verifyWith(secretKey)
                        .build()
                        .parseSignedClaims(token)
                        .getPayload();

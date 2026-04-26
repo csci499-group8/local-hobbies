@@ -91,9 +91,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserOnboardingIncompleteSection'
+                $ref: '#/components/schemas/UserOnboardingStatusResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -594,7 +592,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /availabilities/one-time:
+  /availabilities/one-times:
     post:
       tags:
         - Availabilities
@@ -623,7 +621,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /availabilities/one-time/{oneTimeId}:
+  /availabilities/one-times/{oneTimeId}:
     put:
       tags:
         - Availabilities
@@ -676,7 +674,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /availabilities/recurring:
+  /availabilities/recurrings:
     post:
       tags:
         - Availabilities
@@ -705,7 +703,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /availabilities/recurring/{recurringId}:
+  /availabilities/recurrings/{recurringId}:
     put:
       tags:
         - Availabilities
@@ -1131,16 +1129,16 @@ components:
           enum: [noValue, minCountNotMet]
           example: minCountNotMet
 
-#    UserOnboardingStatusResponse:
-#      type: object
-#      required:
-#        - incompleteSections
-#      description: list of sections that are yet to be completed for onboarding
-#      properties:
-#        incompleteSections:
-#          type: array
-#          items:
-#            $ref: '#/components/schemas/UserOnboardingIncompleteSection'
+    UserOnboardingStatusResponse:
+      type: object
+      required:
+        - incompleteSections
+      description: list of sections that are yet to be completed for onboarding
+      properties:
+        incompleteSections:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserOnboardingIncompleteSection'
 
     UserOnboardingRequest:
       type: object
@@ -1162,6 +1160,12 @@ components:
         publicContactInfo:
           type: string
           example: "@asmith123 on Instagram"
+        showAge:
+          type: boolean
+          example: true
+        showGenderDisplayed:
+          type: boolean
+          example: true
         hobbies:
           type: array
           items:
@@ -1571,10 +1575,6 @@ components:
       properties:
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
-        startDate:
-          type: string
-          format: date
-          example: "2026-03-15"
         start:
           type: string
           format: date-time
@@ -1656,12 +1656,12 @@ components:
           type: string
           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
           example: Tuesday
-          description: day of week (for weekly/every two weeks); omitted if startDayOfMonth is submitted
+          description: day of week (for weekly/every two weeks); omitted or null if startDayOfMonth is submitted
         startDayOfMonth:
           type: integer
           minimum: 1
           maximum: 31
-          description: day of month (for monthly); omitted if startDayOfWeek is submitted
+          description: day of month (for monthly); omitted or null if startDayOfWeek is submitted
         startTime:
           type: string
           format: time
@@ -1773,17 +1773,19 @@ components:
       required:
         - recurringAvailabilityId
         - exceptionDate
-        - exceptionReason
         - isCancelled
       properties:
         recurringAvailabilityId:
           type: integer
+          example: 10
         exceptionDate:
           type: string
           format: date
           example: "2026-03-04"
         exceptionReason:
           type: string
+          nullable: true
+          description: may be omitted or null
           example: Traveling
         isCancelled:
           type: boolean
@@ -1797,10 +1799,12 @@ components:
           format: time
           nullable: true
           description: omitted or null if isCancelled = true
+          example: "14:00"
         overrideDuration:
           type: string
           nullable: true
           description: ISO 8601 duration; omitted or null if isCancelled = true
+          example: PT2H
 
     AvailabilityExceptionOnboardingCreationRequest:
       type: object
@@ -1808,7 +1812,6 @@ components:
         instead relying on JSON nesting to associate with recurring availability
       required:
         - exceptionDate
-        - exceptionReason
         - isCancelled
       properties:
         exceptionDate:
@@ -1817,6 +1820,8 @@ components:
           example: "2026-03-04"
         exceptionReason:
           type: string
+          nullable: true
+          description: may be omitted or null
           example: Traveling
         isCancelled:
           type: boolean
@@ -1837,15 +1842,11 @@ components:
 
     AvailabilityExceptionUpdateRequest:
       type: object
+      description: note that recurringAvailabilityId and exceptionDate cannot be changed
       properties:
-        recurringAvailabilityId:
-          type: integer
-        exceptionDate:
-          type: string
-          format: date
-          example: "2026-03-04"
         exceptionReason:
           type: string
+          nullable: true
           example: Traveling
         isCancelled:
           type: boolean
@@ -2081,7 +2082,6 @@ components:
         type:
           type: string
           enum: [GENDERS, MIN_AGE, MAX_AGE, EXPERIENCE_LEVEL]
-          example: MIN_AGE
         isHard:
           type: boolean
           description: if true, excludes users not matching this filter; if false,

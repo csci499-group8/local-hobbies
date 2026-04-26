@@ -1,0 +1,8 @@
+logging:
+  level:
+    root: warn
+    org.flywaydb: info
+    org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: warn
+    org.springframework.security: info
+    io.github.csci499_group8: info

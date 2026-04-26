@@ -1,21 +1,24 @@
 package io.github.csci499_group8.local_hobbies.backend.service;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.*;
-import io.github.csci499_group8.local_hobbies.backend.dto.user.UserOnboardingRequest;
 import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFoundException;
 import io.github.csci499_group8.local_hobbies.backend.mapper.AvailabilityMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.AvailabilityException;
 import io.github.csci499_group8.local_hobbies.backend.model.OneTimeAvailability;
 import io.github.csci499_group8.local_hobbies.backend.model.RecurringAvailability;
 import io.github.csci499_group8.local_hobbies.backend.model.UserOwned;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityFrequency;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityType;
 import io.github.csci499_group8.local_hobbies.backend.repository.AvailabilityExceptionRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.OneTimeAvailabilityRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.RecurringAvailabilityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -23,16 +26,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.OVERLAP_WINDOW_DAYS;
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.SCHEDULING_WINDOW_DAYS;
+import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.*;
 import static io.github.csci499_group8.local_hobbies.backend.service.LocationService.calculateDistanceKilometers;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AvailabilityService {
-
-    //TODO: validate ruleStart < ruleEnd when updating RecurringAvailability
-//    after converting OneTime duration (Duration) to end (timestamp), add verification to update that updated duration <= 1 week
 
     private final OneTimeAvailabilityRepository oneTimeRepository;
     private final RecurringAvailabilityRepository recurringRepository;
@@ -79,18 +79,19 @@ public class AvailabilityService {
     @Transactional
     public OneTimeAvailabilityResponse updateOneTime(Integer userId, Integer oneTimeId,
                                                      OneTimeAvailabilityUpdateRequest request) {
-        OneTimeAvailability availability = findAvailabilityByUserIdAndId(userId, oneTimeId, oneTimeRepository);
+        OneTimeAvailability availability = findAvailabilityByUserIdAndId(userId, oneTimeId, oneTimeRepository,
+                                                                         AvailabilityType.ONE_TIME_AVAILABILITY);
 
         availabilityMapper.updateEntity(request, availability);
 
-        verifyNoConflicts(userId, availabilityMapper.toInterval(availability), oneTimeId);
+        verifyNoConflicts(userId, availabilityMapper.toInterval(availability));
 
         return availabilityMapper.toOneTimeResponse(oneTimeRepository.save(availability));
     }
 
     @Transactional
     public void deleteOneTime(Integer userId, Integer oneTimeId) {
-        deleteAvailability(userId, oneTimeId, oneTimeRepository);
+        deleteAvailability(userId, oneTimeId, oneTimeRepository, AvailabilityType.ONE_TIME_AVAILABILITY);
     }
 
     @Transactional
@@ -109,47 +110,70 @@ public class AvailabilityService {
     @Transactional
     public RecurringAvailabilityResponse updateRecurring(Integer userId, Integer recurringId,
                                                          RecurringAvailabilityUpdateRequest request) {
-        RecurringAvailability availability = findAvailabilityByUserIdAndId(userId, recurringId, recurringRepository);
+        RecurringAvailability availability = findAvailabilityByUserIdAndId(userId, recurringId, recurringRepository,
+                                                                           AvailabilityType.RECURRING_AVAILABILITY);
+
+        //capture original values to check later if any exceptions become obsolete
+        LocalDate originalRuleStart = availability.getRuleStart();
+        LocalDate originalRuleEnd = availability.getRuleEnd();
+        AvailabilityFrequency originalFrequency = availability.getFrequency();
 
         availabilityMapper.updateEntity(request, availability);
 
+        if (availability.getRuleEnd() != null
+            && availability.getRuleEnd().isBefore(availability.getRuleStart())) {
+            throw new IllegalArgumentException("Rule end date must be after rule start date");
+        }
+
         getRecurringOccurrences(availability, LocalDate.now(),
                                 LocalDate.now().plusDays(SCHEDULING_WINDOW_DAYS)).forEach(
-                occurrence -> verifyNoConflicts(userId, availabilityMapper.toInterval(availability, occurrence), recurringId)
-        );
+                occurrence -> verifyNoConflicts(userId, availabilityMapper.toInterval(availability, occurrence)));
+
+        deleteObsoleteExceptions(availability, originalRuleStart, originalRuleEnd, originalFrequency);
 
         return availabilityMapper.toRecurringResponse(recurringRepository.save(availability));
     }
 
     @Transactional
     public void deleteRecurring(Integer userId, Integer recurringId) {
-        deleteAvailability(userId, recurringId, recurringRepository);
+        deleteAvailability(userId, recurringId, recurringRepository, AvailabilityType.RECURRING_AVAILABILITY);
+        //on delete, cascades to availability exceptions
     }
 
-    //TODO: logic for ensuring exception date is a recurring date
-    //TODO: check that exception has not already been created for date?
-    //TODO: extract above + logic for fetching recurring availability?
     @Transactional
     public AvailabilityExceptionResponse createException(Integer userId,
                                                          AvailabilityExceptionCreationRequest request) {
-        AvailabilityException exception = availabilityMapper.toEntity(request, userId);
+        //ensure that exception date is a recurring date and that exception has not already been created for date
 
-        Integer recurringId = exception.getRecurringAvailabilityId();
+        LocalDate exceptionDate = request.exceptionDate();
+        Integer recurringId = request.recurringAvailabilityId();
+
         RecurringAvailability recurringAvailability = recurringRepository.findById(recurringId).orElseThrow(
-                () -> new ResourceNotFoundException("Recurring availability not found with ID: " + recurringId)
+            () -> new ResourceNotFoundException("Recurring availability not found with ID: " + recurringId)
         );
 
-        verifyNoConflicts(userId, availabilityMapper.toInterval(exception, recurringAvailability));
+        if (exceptionRepository.existsByExceptionDateAndRecurringAvailabilityId(exceptionDate, recurringId)) {
+            throw new IllegalStateException("An exception already exists for date " + exceptionDate);
+        }
+        if (getRecurringOccurrences(recurringAvailability, exceptionDate, exceptionDate).isEmpty()) {
+            throw new IllegalArgumentException("The date " + exceptionDate
+                                                   + " is not a valid date for this recurring availability");
+        }
+
+        //standard creation behavior
+
+        AvailabilityException exception = availabilityMapper.toEntity(request, userId);
+
+        verifyNoConflicts(userId, availabilityMapper.toInterval(exception, recurringAvailability), recurringAvailability.getId());
 
         return availabilityMapper.toExceptionResponse(exceptionRepository.save(exception));
     }
 
-    //TODO: logic for ensuring exception date is a recurring date
-    //TODO: extract above + logic for fetching recurring availability?
     @Transactional
     public AvailabilityExceptionResponse updateException(Integer userId, Integer exceptionId,
                                                          AvailabilityExceptionUpdateRequest request) {
-        AvailabilityException exception = findAvailabilityByUserIdAndId(userId, exceptionId, exceptionRepository);
+        AvailabilityException exception = findAvailabilityByUserIdAndId(userId, exceptionId, exceptionRepository,
+                                                                        AvailabilityType.AVAILABILITY_EXCEPTION);
 
         availabilityMapper.updateEntity(request, exception);
 
@@ -158,16 +182,14 @@ public class AvailabilityService {
                 () -> new ResourceNotFoundException("Recurring availability not found with ID: " + recurringId)
         );
 
-        verifyNoConflicts(userId, availabilityMapper.toInterval(exception, recurringAvailability), exceptionId);
+        verifyNoConflicts(userId, availabilityMapper.toInterval(exception, recurringAvailability), recurringId);
 
         return availabilityMapper.toExceptionResponse(exceptionRepository.save(exception));
     }
 
     @Transactional
     public void deleteException(Integer userId, Integer exceptionId) {
-        deleteAvailability(userId, exceptionId, exceptionRepository);
-
-        //TODO: if an exception is deleted, should server send RecurringAvailability or should client request refresh?
+        deleteAvailability(userId, exceptionId, exceptionRepository, AvailabilityType.AVAILABILITY_EXCEPTION);
     }
 
     // --- methods called by services
@@ -250,58 +272,83 @@ public class AvailabilityService {
      *         is unauthorized
      */
     private <E extends UserOwned> E findAvailabilityByUserIdAndId(Integer userId,
-                                                                Integer availabilityId,
-                                                                JpaRepository<E, Integer> repository) {
+                                                                  Integer availabilityId,
+                                                                  JpaRepository<E, Integer> repository,
+                                                                  AvailabilityType availabilityType) {
         E availability = repository.findById(availabilityId).orElseThrow(
                 () -> new ResourceNotFoundException(
-                        "Availability or availability exception not found with ID: " + availabilityId
-                )
-        );
+                    availabilityType.getLabel() + " not found with ID: " + availabilityId));
 
         //verify ownership
         if (!availability.getUserId().equals(userId)) {
-            //log forbidden request
+            log.warn("Unauthorized access attempt: User {} tried to access {} {} owned by user {}",
+                     userId, availabilityType.getLabel().toLowerCase(), availabilityId, availability.getUserId());
+
             throw new ResourceNotFoundException(
-                    "Availability or availability exception not found with ID: " + availabilityId
-            );
+                availabilityType.getLabel() + " not found with ID: " + availabilityId);
         }
         return availability;
     }
 
     private <E extends UserOwned> void deleteAvailability(Integer userId,
-                                        Integer availabilityId,
-                                        JpaRepository<E, Integer> repository) {
-        E availability = findAvailabilityByUserIdAndId(userId, availabilityId, repository);
+                                                          Integer availabilityId,
+                                                          JpaRepository<E, Integer> repository,
+                                                          AvailabilityType availabilityType) {
+        E availability = findAvailabilityByUserIdAndId(userId, availabilityId, repository, availabilityType);
 
         repository.delete(availability);
     }
 
-    //TODO: use for AvailabilityException save requests to skip comparison against the parent RecurringAvailability
+    /**
+     * Delete any AvailabilityExceptions that have become obsolete due to changing
+     * the parent RecurringAvailability's rule period or frequency.
+     */
+    private void deleteObsoleteExceptions(RecurringAvailability availability, LocalDate originalRuleStart,
+                                          LocalDate originalRuleEnd, AvailabilityFrequency originalFrequency) {
+        if (availability.getFrequency() != originalFrequency) {
+            exceptionRepository.deleteByRecurringAvailabilityId(availability.getId());
+        }
+        //if new rule period does not overlap old rule period
+        else if ((availability.getRuleEnd() != null && !originalRuleStart.isBefore(availability.getRuleEnd()))
+            || (originalRuleEnd != null && !originalRuleEnd.isAfter(availability.getRuleStart()))) {
+            exceptionRepository.deleteByRecurringAvailabilityId(availability.getId());
+        }
+        else {
+            exceptionRepository.deleteByRecurringAvailabilityIdAndExceptionDateOutsideRange(availability.getId(),
+                                                                                            availability.getRuleStart(),
+                                                                                            availability.getRuleEnd());
+        }
+    }
+
     /**
      * Verify that a creation or update request does not conflict with the user's
      * current schedule.
-     * @param excludedId ID of the stored availability; used for update requests
-     *                   to skip comparison against the stored availability because
-     *                   the update's contents likely overlap with the stored
-     *                   availability's
+     * @param parentRecurringId ID of an AvailabilityException's parent
+     *                          RecurringAvailability, used to skip comparison
+     *                          against the parent
      */
-    private void verifyNoConflicts(Integer userId, AvailabilityInterval newInterval, Integer excludedId) {
-        //availabilities can have durations up to 1 week, so check for conflicts within 1 week
-        LocalDate windowStart = newInterval.start().toLocalDate().minusWeeks(1);
-        LocalDate windowEnd = newInterval.end().toLocalDate().plusWeeks(1);
+    private void verifyNoConflicts(Integer userId, AvailabilityInterval newInterval, Integer parentRecurringId) {
+        //check for conflicts within range of availability max duration
+        LocalDate windowStart = newInterval.start().minus(Duration.ofHours(MAX_DURATION_HOURS)).toLocalDate();
+        LocalDate windowEnd = newInterval.end().plus(Duration.ofHours(MAX_DURATION_HOURS)).toLocalDate();
 
         List<AvailabilityInterval> existingIntervals = projectScheduleToIntervals(userId, windowStart, windowEnd);
 
         boolean hasConflict = existingIntervals.stream()
-                                               .filter(existing -> !existing.sourceId().equals(excludedId))
+                                               .filter(existing ->
+                                                           !existing.sourceId().equals(newInterval.sourceId())
+                                                               && !existing.sourceId().equals(parentRecurringId))
                                                .anyMatch(existing -> existing.overlaps(newInterval));
-        //TODO: optimize anyMatch to ignore existing recurrings that were already checked?
 
         if (hasConflict) {
             throw new IllegalStateException("New availability conflicts with an existing availability");
         }
     }
 
+    /**
+     * Verify that a creation or update request for a OneTimeAvailability or a
+     * RecurringAvailability does not conflict with the user's current schedule.
+     */
     private void verifyNoConflicts(Integer userId, AvailabilityInterval interval) {
         verifyNoConflicts(userId, interval, null);
     }
@@ -334,7 +381,8 @@ public class AvailabilityService {
         return oneTimeRepository.findAllByUserId(userId).stream()
                                 .filter(availability -> { //limit search window
                                     return availability.getStart().toLocalDate().isBefore(windowEnd)
-                                            && availability.getStart().plus(availability.getDuration()).toLocalDate().isAfter(windowStart); //TODO: stop using Duration?
+                                            && availability.getStart().plus(availability.getDuration())
+                                                           .toLocalDate().isAfter(windowStart);
                                 })
                                 .map(availabilityMapper::toInterval)
                                 .toList();
@@ -343,8 +391,8 @@ public class AvailabilityService {
     /**
      * Project a user's RecurringAvailabilities to a list of AvailabilityIntervals.
      * Each RecurringAvailability is expanded into a list of AvailabilityIntervals
-     * within the WITHIN_DAYS time window. Intervals are removed or replaced as
-     * indicated by the user's AvailabilityExceptions.
+     * within the time window. Intervals are removed or replaced as indicated by
+     * the user's AvailabilityExceptions.
      * @return list of AvailabilityIntervals for a user's RecurringAvailabilities
      */
     private List<AvailabilityInterval> projectRecurringsToIntervals(Integer userId,

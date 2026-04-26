@@ -15,9 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class AvailabilityController {
 
-    //TODO: normalize ResponseEntities; some POSTs use .ok(), some use .status().body(),
-    //TODO: (related to 200/201/204 responses?)
-
     private final AvailabilityService availabilityService;
 
     @GetMapping
@@ -28,7 +25,7 @@ public class AvailabilityController {
 
     // --- one-time availabilities ---
 
-    @PostMapping("/one-time")
+    @PostMapping("/one-times")
     public ResponseEntity<OneTimeAvailabilityResponse> addOneTimeAvailability(
             @RequestAttribute("userId") Integer userId,
             @Valid @RequestBody OneTimeAvailabilityCreationRequest request) {
@@ -36,7 +33,7 @@ public class AvailabilityController {
                              .body(availabilityService.createOneTime(userId, request));
     }
 
-    @PutMapping("/one-time/{oneTimeId}")
+    @PutMapping("/one-times/{oneTimeId}")
     public ResponseEntity<OneTimeAvailabilityResponse> updateOneTimeAvailability(
             @RequestAttribute("userId") Integer userId,
             @PathVariable Integer oneTimeId,
@@ -44,7 +41,7 @@ public class AvailabilityController {
         return ResponseEntity.ok(availabilityService.updateOneTime(userId, oneTimeId, request));
     }
 
-    @DeleteMapping("/one-time/{oneTimeId}")
+    @DeleteMapping("/one-times/{oneTimeId}")
     public ResponseEntity<Void> deleteOneTimeAvailability(
             @RequestAttribute("userId") Integer userId,
             @PathVariable Integer oneTimeId) {
@@ -54,7 +51,7 @@ public class AvailabilityController {
 
     // --- recurring availabilities ---
 
-    @PostMapping("/recurring")
+    @PostMapping("/recurrings")
     public ResponseEntity<RecurringAvailabilityResponse> addRecurringAvailability(
             @RequestAttribute("userId") Integer userId,
             @Valid @RequestBody RecurringAvailabilityCreationRequest request) {
@@ -62,7 +59,7 @@ public class AvailabilityController {
                              .body(availabilityService.createRecurring(userId, request));
     }
 
-    @PutMapping("/recurring/{recurringId}")
+    @PutMapping("/recurrings/{recurringId}")
     public ResponseEntity<RecurringAvailabilityResponse> updateRecurringAvailability(
             @RequestAttribute("userId") Integer userId,
             @PathVariable Integer recurringId,
@@ -70,7 +67,7 @@ public class AvailabilityController {
         return ResponseEntity.ok(availabilityService.updateRecurring(userId, recurringId, request));
     }
 
-    @DeleteMapping("/recurring/{recurringId}")
+    @DeleteMapping("/recurrings/{recurringId}")
     public ResponseEntity<Void> deleteRecurringAvailability(
             @RequestAttribute("userId") Integer userId,
             @PathVariable Integer recurringId) {

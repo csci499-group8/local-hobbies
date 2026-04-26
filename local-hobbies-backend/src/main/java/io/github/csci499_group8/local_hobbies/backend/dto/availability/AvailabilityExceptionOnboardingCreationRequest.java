@@ -19,7 +19,7 @@ import static io.github.csci499_group8.local_hobbies.backend.config.Availability
  */
 public record AvailabilityExceptionOnboardingCreationRequest (
     @NotNull @WithinDays(SCHEDULING_WINDOW_DAYS) LocalDate exceptionDate,
-    @NotNull String exceptionReason,
+    String exceptionReason, //may be omitted or null
     @NotNull boolean isCancelled,
     @Valid GeoJsonPoint overrideLocation, //omitted or null if isCancelled = true
     LocalTime overrideStartTime, //omitted or null if isCancelled = true

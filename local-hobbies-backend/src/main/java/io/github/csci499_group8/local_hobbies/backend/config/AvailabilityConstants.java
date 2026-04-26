@@ -18,4 +18,9 @@ public class AvailabilityConstants {
      */
     public static final long MAX_DURATION_HOURS = 168;
 
+    /**
+     * Maximum overlap of two availabilities in minutes
+     */
+    public static final int MAX_OVERLAP_MINUTES = (int) (MAX_DURATION_HOURS * 60);
+
 }

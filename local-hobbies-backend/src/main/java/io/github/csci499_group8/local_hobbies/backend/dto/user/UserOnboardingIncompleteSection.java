@@ -22,7 +22,7 @@ public record UserOnboardingIncompleteSection(
     }
 
     public enum IncompleteReason {
-        noValue,
-        minCountNotMet
+        NO_VALUE,
+        MIN_COUNT_NOT_MET
     }
 }

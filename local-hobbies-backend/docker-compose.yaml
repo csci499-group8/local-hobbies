@@ -1,0 +1,29 @@
+#for local development
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: local_hobbies
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d local_hobbies" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy #wait for database to be ready
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/local_hobbies
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+      JWT_SECRET_KEY: zU1qZQt8jzer6mYp04F74Ha9+f7Yh/ilAN1ZK8EBy08=

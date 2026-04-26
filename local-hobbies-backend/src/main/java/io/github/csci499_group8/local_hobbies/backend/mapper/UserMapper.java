@@ -8,6 +8,7 @@ import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.user.*;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -19,9 +20,14 @@ import java.util.List;
         uses = { JsonNullableMapper.class, LocationMapper.class })
 public abstract class UserMapper {
 
+    @Autowired
+    protected JsonNullableMapper jsonNullableMapper;
+
+    @Autowired
+    protected LocationMapper locationMapper;
+
     // --- toEntity mappings ---
 
-    //signup request creates user
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "username", source = "request.username")
     @Mapping(target = "password", source = "passwordHash")
@@ -31,45 +37,50 @@ public abstract class UserMapper {
 
     // --- updateEntity mappings ---
 
-    //onboarding request updates user
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "name", source = "request.name")
-    @Mapping(target = "birthDate", source = "request.birthDate")
-    @Mapping(target = "locationPoint", source = "request.location") //automatically maps by calling LocationMapper method
+    @Mapping(target = "name", expression = "java(jsonNullableMapper.unwrap(request.name(), user.getName()))")
+    @Mapping(target = "birthDate", expression = "java(jsonNullableMapper.unwrap(request.birthDate(), user.getBirthDate()))")
+    @Mapping(target = "locationPoint", expression = "java(jsonNullableMapper.unwrap(request.location(), user.getLocationPoint(), locationMapper::mapGeoJsonPointToPoint))")
     @Mapping(target = "locationApproximate", source = "locationApproximate")
-    @Mapping(target = "publicContactInfo", source = "request.publicContactInfo")
-    @Mapping(target = "genderMatched", source = "request.genderMatched")
-    @Mapping(target = "showAge", source = "request.showAge")
-    @Mapping(target = "showGenderDisplayed", source = "request.showGenderDisplayed")
+    @Mapping(target = "publicContactInfo", expression = "java(jsonNullableMapper.unwrap(request.publicContactInfo(), user.getPublicContactInfo()))")
+    @Mapping(target = "genderMatched", expression = "java(jsonNullableMapper.unwrap(request.genderMatched(), user.getGenderMatched()))")
+    @Mapping(target = "showAge", expression = "java(jsonNullableMapper.unwrap(request.showAge(), user.getShowAge()))")
+    @Mapping(target = "showGenderDisplayed", expression = "java(jsonNullableMapper.unwrap(request.showGenderDisplayed(), user.getShowGenderDisplayed()))")
     public abstract void updateEntity(UserOnboardingRequest request,
                                       String locationApproximate,
                                       @MappingTarget User user);
 
-    //update request updates user
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "username", ignore = true)
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "email", expression = "java(jsonNullableMapper.unwrap(request.email(), user.getEmail()))")
     @Mapping(target = "lastSessionTime", ignore = true)
     @Mapping(target = "onboardingComplete", ignore = true)
-    @Mapping(target = "locationPoint", source = "request.location") //automatically maps by calling LocationMapper method
+    @Mapping(target = "name", expression = "java(jsonNullableMapper.unwrap(request.name(), user.getName()))")
+    @Mapping(target = "birthDate", expression = "java(jsonNullableMapper.unwrap(request.birthDate(), user.getBirthDate()))")
+    @Mapping(target = "genderDisplayed", expression = "java(jsonNullableMapper.unwrap(request.genderDisplayed(), user.getGenderDisplayed()))")
+    @Mapping(target = "bio", expression = "java(jsonNullableMapper.unwrap(request.bio(), user.getBio()))")
+    @Mapping(target = "locationPoint", expression = "java(jsonNullableMapper.unwrap(request.location(), user.getLocationPoint(), locationMapper::mapGeoJsonPointToPoint))")
     @Mapping(target = "locationApproximate", source = "locationApproximate")
+    @Mapping(target = "publicContactInfo", expression = "java(jsonNullableMapper.unwrap(request.publicContactInfo(), user.getPublicContactInfo()))")
+    @Mapping(target = "profilePhotoUrl", expression = "java(jsonNullableMapper.unwrap(request.profilePhotoUrl(), user.getProfilePhotoUrl()))")
+    @Mapping(target = "genderMatched", expression = "java(jsonNullableMapper.unwrap(request.genderMatched(), user.getGenderMatched()))")
+    @Mapping(target = "showAge", expression = "java(jsonNullableMapper.unwrap(request.showAge(), user.getShowAge()))")
+    @Mapping(target = "showGenderDisplayed", expression = "java(jsonNullableMapper.unwrap(request.showGenderDisplayed(), user.getShowGenderDisplayed()))")
     public abstract void updateEntity(UserUpdateRequest request,
                                       String locationApproximate,
                                       @MappingTarget User user);
 
     // --- toResponse mappings ---
 
-    //user maps to user response
     @Mapping(target = "locationPoint", source = "user.locationPoint") //automatically maps by calling LocationMapper method
     public abstract UserResponse toResponse(User user);
 
-    //user + hobby info maps to current user profile response
     @Mapping(target = "age", expression = "java(mapAge(user))")
     @Mapping(target = "genderDisplayed", expression = "java(mapGenderDisplayed(user))")
     public abstract CurrentUserProfileResponse toCurrentProfileResponse(
         User user, List<HobbyResponse> hobbies, List<HobbyPhotoResponse> hobbyPhotos);
 
-    //user + hobby info + overlap info maps to other user profile response
     @Mapping(target = "age", expression = "java(mapAge(otherUser))")
     @Mapping(target = "genderDisplayed", expression = "java(mapGenderDisplayed(otherUser))")
     public abstract OtherUserProfileResponse toOtherProfileResponse(
@@ -90,23 +101,3 @@ public abstract class UserMapper {
     }
 
 }
-
-//TODO:
-/**
- * It is impossible to distinguish between empty fields and fields
- * set to null. Solution: use Optional fields in the DTO.
- *
- * Example:
- * public record UserUpdateRequest(
- *     Optional<String> name,
- *     Optional<String> location
- * ) {}
- *
- * Now you can distinguish:
- * DTO value	        Meaning
- * Optional.empty()	    set field to null
- * Optional.of(value)	update value
- * null	                field not provided
- *
- * MapStruct supports this with custom mappings.
- */

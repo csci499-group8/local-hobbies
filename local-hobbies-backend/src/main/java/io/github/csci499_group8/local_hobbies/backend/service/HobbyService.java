@@ -3,7 +3,6 @@ package io.github.csci499_group8.local_hobbies.backend.service;
 import io.github.csci499_group8.local_hobbies.backend.dto.common.UploadUrlRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.common.UploadUrlResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.*;
-import io.github.csci499_group8.local_hobbies.backend.dto.user.UserOnboardingRequest;
 import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFoundException;
 import io.github.csci499_group8.local_hobbies.backend.mapper.HobbyMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
@@ -13,6 +12,7 @@ import io.github.csci499_group8.local_hobbies.backend.repository.GlobalHobbyRepo
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyPhotoRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HobbyService {
@@ -179,7 +180,9 @@ public class HobbyService {
 
         //verify ownership
         if (!hobby.getUserId().equals(userId)) {
-            //log forbidden request
+            log.warn("Unauthorized access attempt: User {} tried to access hobby {} owned by user {}",
+                     userId, hobbyId, hobby.getUserId());
+
             throw new ResourceNotFoundException("Hobby not found with ID: " + hobbyId);
         }
         return hobby;

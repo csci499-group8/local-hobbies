@@ -4,11 +4,15 @@ import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthLoginRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthSignupRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.user.UserOnboardingRequest;
+import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFoundException;
 import io.github.csci499_group8.local_hobbies.backend.exception.UnauthorizedException;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
-import io.github.csci499_group8.local_hobbies.backend.security.TokenService;
+import io.github.csci499_group8.local_hobbies.backend.security.JwtService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,15 +21,25 @@ import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
-    private final UserService userService;
+public class AuthService implements UserDetailsService {
 
-    private final TokenService tokenService;
+    private final UserService userService;
+    private final JwtService jwtService;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public void verifyUserExists(String userId) {
-        if (!userService.getUserExistsById(Integer.parseInt(userId))) {
-            throw new UnauthorizedException("User no longer exists");
+    @Override
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        try {
+            User user = userService.getUserByIdOrThrow(Integer.parseInt(userId));
+
+            return org.springframework.security.core.userdetails.User
+                .withUsername(userId)
+                .password(user.getPassword())
+                .authorities("ROLE_USER")
+                .build();
+
+        } catch (ResourceNotFoundException | NumberFormatException e) {
+            throw new UsernameNotFoundException("User not found with ID: " + userId);
         }
     }
 
@@ -52,8 +66,8 @@ public class AuthService {
     }
 
     private AuthResponse generateAuthResponse(User user) {
-        String token = tokenService.generateToken(user.getId().toString());
-        Claims claims = tokenService.parseToken(token);
+        String token = jwtService.generateToken(user.getId().toString(), user.isOnboardingComplete());
+        Claims claims = jwtService.parseToken(token);
         OffsetDateTime expirationTime = claims.getExpiration().toInstant().atOffset(ZoneOffset.UTC);
 
         AuthResponse.Auth auth = new AuthResponse.Auth(token,
@@ -65,4 +79,5 @@ public class AuthService {
 
         return new AuthResponse(auth, authUser);
     }
+
 }

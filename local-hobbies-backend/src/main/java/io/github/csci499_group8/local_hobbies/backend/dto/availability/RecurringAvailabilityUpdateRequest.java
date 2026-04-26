@@ -48,4 +48,6 @@ public record RecurringAvailabilityUpdateRequest(
 
         return !ruleEnd.get().isBefore(ruleStart.get());
     }
+    
+    //TODO: frequency, startDayOfWeek, and startDayOfMonth should be tied together
 }

@@ -7,9 +7,10 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum AvailabilityType {
-    ONE_TIME("One-time"),
-    RECURRING("Recurring"),
-    EXCEPTION("Exception");
+
+    ONE_TIME_AVAILABILITY("One-time availability"),
+    RECURRING_AVAILABILITY("Recurring availability"),
+    AVAILABILITY_EXCEPTION("Availability exception");
 
     @JsonValue
     private final String label;

@@ -4,14 +4,17 @@ import io.github.csci499_group8.local_hobbies.backend.dto.availability.Availabil
 import io.github.csci499_group8.local_hobbies.backend.dto.match.*;
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
-import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchDistanceType;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring",
         uses = { JsonNullableMapper.class })
 public abstract class MatchMapper {
+
+    @Autowired
+    protected JsonNullableMapper jsonNullableMapper;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
@@ -20,7 +23,7 @@ public abstract class MatchMapper {
     public abstract SavedMatch toEntity(SavedMatchCreationRequest request, Integer userId);
 
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "notes", source = "notes")
+    @Mapping(target = "notes", expression = "java(jsonNullableMapper.unwrap(request.notes(), match.getNotes()))")
     public abstract void updateEntity(SavedMatchUpdateRequest request, @MappingTarget SavedMatch match);
 
     @Mapping(target = "id", source = "savedMatch.id")
@@ -30,9 +33,9 @@ public abstract class MatchMapper {
 
     @Mapping(target = "overlappingAvailabilities", source = "overlaps")
     public abstract MatchSearchResultResponse toSearchResultResponse(User matchedUser,
-                                                     MatchDistanceType distanceType,
-                                                     Double distanceKilometers,
-                                                     List<AvailabilityOverlapResponse> overlaps);
+                                                                     MatchSearchResultResponse.MatchDistanceType distanceType,
+                                                                     Double distanceKilometers,
+                                                                     List<AvailabilityOverlapResponse> overlaps);
 
     //helper method
     protected abstract MatchedUser mapToMatchedUser(User user);

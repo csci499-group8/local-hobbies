@@ -10,10 +10,12 @@ import jakarta.validation.constraints.*;
 
 import java.util.List;
 
+import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_OVERLAP_MINUTES;
+
 public record MatchSearchRequest(
     @NotNull HobbyName hobby,
     @NotNull @Min(0) Integer radiusKilometers,
-    @NotNull @Min(0) Integer minimumOverlapMinutes, //TODO: @MaxDurationHours to minutes
+    @NotNull @Min(0) @Max(MAX_OVERLAP_MINUTES) Integer minimumOverlapMinutes,
     @NotNull @Valid List<MatchSearchFilter> filters //may be empty
 ) {
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")

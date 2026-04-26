@@ -65,14 +65,11 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public boolean getUserExistsById(Integer userId) {
-        return userRepository.existsById(userId);
-    }
-
     public Optional<User> findUserByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
+    //TODO: prevent partial updates to hobbies and availabilities
     @Transactional
     public User processOnboarding(Integer userId, UserOnboardingRequest request) {
         User user = getUserByIdOrThrow(userId);
@@ -113,31 +110,31 @@ public class UserService {
         //noValue checks
         if (user.getName() == null || user.getName().isBlank()) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.name, IncompleteReason.noValue));
+                SectionName.name, IncompleteReason.NO_VALUE));
         }
         if (user.getBirthDate() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.birthDate, IncompleteReason.noValue));
+                SectionName.birthDate, IncompleteReason.NO_VALUE));
         }
         if (user.getLocationPoint() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.location, IncompleteReason.noValue));
+                SectionName.location, IncompleteReason.NO_VALUE));
         }
         if (user.getPublicContactInfo() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.publicContactInfo, IncompleteReason.noValue));
+                SectionName.publicContactInfo, IncompleteReason.NO_VALUE));
         }
         if (user.getGenderMatched() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.genderMatched, IncompleteReason.noValue));
+                SectionName.genderMatched, IncompleteReason.NO_VALUE));
         }
         if (user.getShowAge() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.showAge, IncompleteReason.noValue));
+                SectionName.showAge, IncompleteReason.NO_VALUE));
         }
         if (user.getShowGenderDisplayed() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.showGenderDisplayed, IncompleteReason.noValue));
+                SectionName.showGenderDisplayed, IncompleteReason.NO_VALUE));
         }
 
         //minCountNotMet checks
@@ -145,14 +142,14 @@ public class UserService {
         if (hobbyCount < MIN_NUM_HOBBIES) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
                 SectionName.hobbies,
-                hobbyCount == 0 ? IncompleteReason.noValue : IncompleteReason.minCountNotMet
+                hobbyCount == 0 ? IncompleteReason.NO_VALUE : IncompleteReason.MIN_COUNT_NOT_MET
             ));
         }
         long availabilityCount = availabilityService.getAvailabilityCount(userId);
         if (availabilityCount < MIN_NUM_AVAILABILITIES) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
                 SectionName.availabilities,
-                availabilityCount == 0 ? IncompleteReason.noValue : IncompleteReason.minCountNotMet
+                availabilityCount == 0 ? IncompleteReason.NO_VALUE : IncompleteReason.MIN_COUNT_NOT_MET
             ));
         }
 

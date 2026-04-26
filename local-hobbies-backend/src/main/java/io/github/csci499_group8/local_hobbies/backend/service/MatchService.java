@@ -6,11 +6,11 @@ import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFound
 import io.github.csci499_group8.local_hobbies.backend.mapper.MatchMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
-import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchDistanceType;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserSpecifications;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -18,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static io.github.csci499_group8.local_hobbies.backend.service.LocationService.calculateDistanceKilometers;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MatchService {
@@ -30,8 +32,8 @@ public class MatchService {
     private final UserService userService;
     private final AvailabilityService availabilityService;
 
-    private record CandidateWithOverlaps(
-            User candidate,
+    private record MatchedUserWithOverlaps(
+            User matchedUser,
             List<AvailabilityOverlapResponse> overlaps
     ) {}
 
@@ -41,31 +43,27 @@ public class MatchService {
     public List<MatchSearchResultResponse> searchForMatches(Integer userId, MatchSearchRequest request) {
         User currentUser = userService.getUserByIdOrThrow(userId);
 
-        // --- database-level hard filters ---
+        //database-level hard filters
         Specification<User> hardFilterSpec = UserSpecifications.buildHardFilterSpecification(request, userId);
         List<User> matchCandidates = userService.findUsersBySpecification(hardFilterSpec);
 
-        // --- hard filtering by availability distance and overlap ---
+        //hard filtering by availability distance and overlap
+        Stream<MatchedUserWithOverlaps> matches = matchCandidates.stream().map(candidate -> {
+            List<AvailabilityOverlapResponse> overlaps = availabilityService
+                .getOverlappingAvailabilities(userId, candidate.getId())
+                .stream()
+                .filter(overlap ->
+                            overlap.distanceKilometers() <= request.radiusKilometers()
+                                && Duration.between(overlap.start(), overlap.end()).toMinutes() >= request.minimumOverlapMinutes()
+                ).toList();
 
-        return matchCandidates.stream().map(candidate -> {
-            //find all availability overlaps
-            List<AvailabilityOverlapResponse> overlaps =
-                    availabilityService.getOverlappingAvailabilities(userId, candidate.getId());
-            return new CandidateWithOverlaps(candidate, overlaps);
-        }
-        ).filter(candidateWithOverlaps -> {
-            //return overlaps that pass hard filters
-            List<AvailabilityOverlapResponse> overlaps = candidateWithOverlaps.overlaps();
+            return new MatchedUserWithOverlaps(candidate, overlaps);
+        });
 
-            return overlaps.stream().anyMatch(overlap ->
-                overlap.distanceKilometers() <= request.radiusKilometers()
-                && Duration.between(overlap.start(), overlap.end()).toMinutes() >= request.minimumOverlapMinutes()
-            );
-        }
-        ).map(matchedUserWithOverlaps -> {
-            //calculate MatchSearchResultResponse.distanceKilometers and return response
+        //calculate MatchSearchResultResponse.distanceKilometers and return response
+        return matches.map(matchedUserWithOverlaps -> {
             Point currentUserLocation = currentUser.getLocationPoint();
-            Point matchedUserLocation = matchedUserWithOverlaps.candidate().getLocationPoint();
+            Point matchedUserLocation = matchedUserWithOverlaps.matchedUser().getLocationPoint();
             double homeDistanceKilometers = calculateDistanceKilometers(currentUserLocation,
                                                                         matchedUserLocation);
 
@@ -74,11 +72,11 @@ public class MatchService {
                                                                          .min() //returns OptionalDouble
                                                                          .orElse(Double.MAX_VALUE);
 
-            MatchDistanceType distanceType = (homeDistanceKilometers < minOverlapDistanceKilometers)
-                    ? MatchDistanceType.HOME : MatchDistanceType.NEAREST_OVERLAPPING_AVAILABILITY;
+            MatchSearchResultResponse.MatchDistanceType distanceType = (homeDistanceKilometers < minOverlapDistanceKilometers)
+                    ? MatchSearchResultResponse.MatchDistanceType.HOME : MatchSearchResultResponse.MatchDistanceType.NEAREST_OVERLAPPING_AVAILABILITY;
             Double minDistanceKilometers = Math.min(homeDistanceKilometers, minOverlapDistanceKilometers);
 
-            return matchMapper.toSearchResultResponse(matchedUserWithOverlaps.candidate(),
+            return matchMapper.toSearchResultResponse(matchedUserWithOverlaps.matchedUser(),
                                                       distanceType,
                                                       minDistanceKilometers,
                                                       matchedUserWithOverlaps.overlaps());
@@ -151,7 +149,9 @@ public class MatchService {
 
         //verify ownership
         if (!match.getUserId().equals(userId)) {
-            //log forbidden request
+            log.warn("Unauthorized access attempt: User {} tried to access saved match {} owned by user {}",
+                     userId, matchId, match.getUserId());
+
             throw new ResourceNotFoundException("Match not found with ID: " + matchId);
         }
         return match;
