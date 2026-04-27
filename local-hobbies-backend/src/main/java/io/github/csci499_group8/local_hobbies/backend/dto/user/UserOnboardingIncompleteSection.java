@@ -1,5 +1,6 @@
 package io.github.csci499_group8.local_hobbies.backend.dto.user;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -22,7 +23,18 @@ public record UserOnboardingIncompleteSection(
     }
 
     public enum IncompleteReason {
-        NO_VALUE,
-        MIN_COUNT_NOT_MET
+        NO_VALUE("No value"),
+        MIN_COUNT_NOT_MET("Minimum number of entries not met");
+
+        private final String label;
+
+        IncompleteReason(String label) {
+            this.label = label;
+        }
+
+        @JsonValue
+        public String getLabel() {
+            return label;
+        }
     }
 }

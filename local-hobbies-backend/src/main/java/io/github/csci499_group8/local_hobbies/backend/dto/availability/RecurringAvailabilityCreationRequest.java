@@ -12,18 +12,15 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Duration;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.SCHEDULING_WINDOW_DAYS;
-
 public record RecurringAvailabilityCreationRequest(
     @Valid @NotNull GeoJsonPoint location,
-    @NotNull @WithinDays(SCHEDULING_WINDOW_DAYS) LocalDate ruleStart,
+    @NotNull @WithinDays LocalDate ruleStart,
     LocalDate ruleEnd, //omitted or null if rule continues indefinitely
     @NotNull AvailabilityFrequency frequency,
     DayOfWeek startDayOfWeek, //omitted or null if startDayOfMonth is submitted
     @Min(1) @Max(31) Integer startDayOfMonth, //omitted or null if startDayOfWeek is submitted
     @NotNull LocalTime startTime,
-    @NotNull @MaxDurationHours(MAX_DURATION_HOURS) Duration duration,
+    @NotNull @MaxDurationHours Duration duration,
     @NotBlank String timeZoneId
 ) {
     @AssertTrue(message = "Rule end date must be after rule start date")

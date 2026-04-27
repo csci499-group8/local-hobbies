@@ -50,7 +50,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 uri.equals("/api/auth/login")
                     || uri.equals("/api/auth/signup")
                     || uri.equals("/api/users/onboarding")
-                    || uri.equals("/api/hobbies/global");
+                    || uri.equals("/api/hobbies/global")
+                    || uri.equals("/error");
 
             boolean onboardingComplete = Boolean.TRUE.equals(claims.get("onboardingComplete", Boolean.class));
             if (!isOnboardingExempt && !onboardingComplete) {

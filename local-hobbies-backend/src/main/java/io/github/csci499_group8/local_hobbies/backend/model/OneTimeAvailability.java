@@ -10,8 +10,6 @@ import org.locationtech.jts.geom.Point;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-
 @Entity
 @Table(name = "one_time_availability", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "start", "duration"})
@@ -39,7 +37,7 @@ public class OneTimeAvailability implements UserOwned {
 
     @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
     @Column(nullable = false)
-    @MaxDurationHours(MAX_DURATION_HOURS)
+    @MaxDurationHours
     private Duration duration;
 
 }

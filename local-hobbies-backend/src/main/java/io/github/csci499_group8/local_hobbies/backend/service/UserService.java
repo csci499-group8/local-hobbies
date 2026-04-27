@@ -18,6 +18,7 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,8 +42,10 @@ public class UserService {
     private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    private static final int MIN_NUM_HOBBIES = 3;
-    private static final int MIN_NUM_AVAILABILITIES = 1;
+    @Value("${application.user.onboarding.min-num-hobbies}")
+    private final int minNumHobbies;
+    @Value("${application.user.onboarding.min-num-availabilities}")
+    private final int minNumAvailabilities;
 
     // --- methods called by AuthService ---
 
@@ -139,14 +142,14 @@ public class UserService {
 
         //minCountNotMet checks
         long hobbyCount = hobbyService.getHobbyCount(userId);
-        if (hobbyCount < MIN_NUM_HOBBIES) {
+        if (hobbyCount < minNumHobbies) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
                 SectionName.hobbies,
                 hobbyCount == 0 ? IncompleteReason.NO_VALUE : IncompleteReason.MIN_COUNT_NOT_MET
             ));
         }
         long availabilityCount = availabilityService.getAvailabilityCount(userId);
-        if (availabilityCount < MIN_NUM_AVAILABILITIES) {
+        if (availabilityCount < minNumAvailabilities) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
                 SectionName.availabilities,
                 availabilityCount == 0 ? IncompleteReason.NO_VALUE : IncompleteReason.MIN_COUNT_NOT_MET
@@ -265,8 +268,8 @@ public class UserService {
                 && user.getGenderMatched() != null
                 && user.getShowAge() != null
                 && user.getShowGenderDisplayed() != null
-                && hobbyCount >= MIN_NUM_HOBBIES
-                && availabilityCount >= MIN_NUM_AVAILABILITIES;
+                && hobbyCount >= minNumHobbies
+                && availabilityCount >= minNumAvailabilities;
     }
 
     private String getApproximateLocation(GeoJsonPoint locationPoint) {

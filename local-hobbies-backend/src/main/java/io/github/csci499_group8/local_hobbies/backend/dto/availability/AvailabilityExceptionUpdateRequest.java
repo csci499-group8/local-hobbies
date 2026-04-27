@@ -9,8 +9,6 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.Duration;
 import java.time.LocalTime;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-
 /**
  * Contains only fields that are being updated
  */
@@ -19,5 +17,5 @@ public record AvailabilityExceptionUpdateRequest(
     @NotNullIfPresent JsonNullable<Boolean> isCancelled,
     @Valid JsonNullable<GeoJsonPoint> overrideLocation, //null if isCancelled = true
     JsonNullable<LocalTime> overrideStartTime, //null if isCancelled = true
-    @MaxDurationHours(MAX_DURATION_HOURS) JsonNullable<Duration> overrideDuration //null if isCancelled = true
+    @MaxDurationHours JsonNullable<Duration> overrideDuration //null if isCancelled = true
 ) {}

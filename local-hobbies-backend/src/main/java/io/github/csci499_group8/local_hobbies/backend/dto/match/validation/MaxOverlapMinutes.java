@@ -1,4 +1,4 @@
-package io.github.csci499_group8.local_hobbies.backend.dto.availability.validation;
+package io.github.csci499_group8.local_hobbies.backend.dto.match.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -10,9 +10,9 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = MaxDurationHoursValidator.class)
-public @interface MaxDurationHours {
-    String message() default "Duration exceeds the maximum allowed hours";
+@Constraint(validatedBy = MaxOverlapMinutesValidator.class)
+public @interface MaxOverlapMinutes {
+    String message() default "Overlap duration exceeds the maximum allowed minutes";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

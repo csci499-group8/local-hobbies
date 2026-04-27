@@ -12,8 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = WithinDaysValidator.class)
 public @interface WithinDays {
-    String message() default "Date must be within {value} days in the future";
-    int value();
+    String message() default "Date is outside the allowed scheduling window";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

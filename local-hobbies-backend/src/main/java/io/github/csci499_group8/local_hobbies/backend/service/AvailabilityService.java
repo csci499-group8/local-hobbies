@@ -14,6 +14,7 @@ import io.github.csci499_group8.local_hobbies.backend.repository.OneTimeAvailabi
 import io.github.csci499_group8.local_hobbies.backend.repository.RecurringAvailabilityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.*;
 import static io.github.csci499_group8.local_hobbies.backend.service.LocationService.calculateDistanceKilometers;
 
 @Slf4j
@@ -38,6 +38,13 @@ public class AvailabilityService {
     private final RecurringAvailabilityRepository recurringRepository;
     private final AvailabilityExceptionRepository exceptionRepository;
     private final AvailabilityMapper availabilityMapper;
+    
+    @Value("${application.availability.scheduling-window-days}")
+    private final int schedulingWindowDays;
+    @Value("${application.availability.overlap-window-days}")
+    private final int overlapWindowDays;
+    @Value("${application.availability.max-duration-hours}")
+    private final int maxDurationHours;
 
     private record ExceptionKey(Integer sourceId, LocalDate date) {}
 
@@ -46,7 +53,7 @@ public class AvailabilityService {
     @Transactional(readOnly = true)
     public ScheduleResponse getSchedule(Integer userId) {
         List<AvailabilityIntervalResponse> intervals =
-            projectScheduleToIntervals(userId, LocalDate.now(), LocalDate.now().plusDays(SCHEDULING_WINDOW_DAYS))
+            projectScheduleToIntervals(userId, LocalDate.now(), LocalDate.now().plusDays(schedulingWindowDays))
             .stream()
             .map(availabilityMapper::toIntervalResponse)
             .toList();
@@ -100,7 +107,7 @@ public class AvailabilityService {
         RecurringAvailability availability = availabilityMapper.toEntity(request, userId);
 
         getRecurringOccurrences(availability, LocalDate.now(),
-                                LocalDate.now().plusDays(SCHEDULING_WINDOW_DAYS)).forEach(
+                                LocalDate.now().plusDays(schedulingWindowDays)).forEach(
                 occurrence -> verifyNoConflicts(userId, availabilityMapper.toInterval(availability, occurrence))
         );
 
@@ -126,7 +133,7 @@ public class AvailabilityService {
         }
 
         getRecurringOccurrences(availability, LocalDate.now(),
-                                LocalDate.now().plusDays(SCHEDULING_WINDOW_DAYS)).forEach(
+                                LocalDate.now().plusDays(schedulingWindowDays)).forEach(
                 occurrence -> verifyNoConflicts(userId, availabilityMapper.toInterval(availability, occurrence)));
 
         deleteObsoleteExceptions(availability, originalRuleStart, originalRuleEnd, originalFrequency);
@@ -229,9 +236,9 @@ public class AvailabilityService {
     public List<AvailabilityOverlapResponse> getOverlappingAvailabilities(Integer currentUserId,
                                                                           Integer otherUserId) {
         List<AvailabilityInterval> currentUserAvailabilities =
-                projectScheduleToIntervals(currentUserId, LocalDate.now(), LocalDate.now().plusDays(OVERLAP_WINDOW_DAYS));
+                projectScheduleToIntervals(currentUserId, LocalDate.now(), LocalDate.now().plusDays(overlapWindowDays));
         List<AvailabilityInterval> otherUserAvailabilities =
-                projectScheduleToIntervals(otherUserId, LocalDate.now(), LocalDate.now().plusDays(OVERLAP_WINDOW_DAYS));
+                projectScheduleToIntervals(otherUserId, LocalDate.now(), LocalDate.now().plusDays(overlapWindowDays));
 
 
         List<AvailabilityOverlapResponse> overlaps = new ArrayList<>();
@@ -329,8 +336,8 @@ public class AvailabilityService {
      */
     private void verifyNoConflicts(Integer userId, AvailabilityInterval newInterval, Integer parentRecurringId) {
         //check for conflicts within range of availability max duration
-        LocalDate windowStart = newInterval.start().minus(Duration.ofHours(MAX_DURATION_HOURS)).toLocalDate();
-        LocalDate windowEnd = newInterval.end().plus(Duration.ofHours(MAX_DURATION_HOURS)).toLocalDate();
+        LocalDate windowStart = newInterval.start().minus(Duration.ofHours(maxDurationHours)).toLocalDate();
+        LocalDate windowEnd = newInterval.end().plus(Duration.ofHours(maxDurationHours)).toLocalDate();
 
         List<AvailabilityInterval> existingIntervals = projectScheduleToIntervals(userId, windowStart, windowEnd);
 
@@ -497,7 +504,7 @@ public class AvailabilityService {
                              );
 
                      return getRecurringOccurrences(recurring, LocalDate.now(), LocalDate.now().plusDays(
-                             SCHEDULING_WINDOW_DAYS)).stream().map(
+                             schedulingWindowDays)).stream().map(
                              occurrence -> {
                                  AvailabilityException exception = exceptionMap.get(occurrence);
 

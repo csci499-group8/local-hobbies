@@ -16,21 +16,18 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.SCHEDULING_WINDOW_DAYS;
-
 /**
  * Contains only fields that are being updated
  */
 public record RecurringAvailabilityUpdateRequest(
     @NotNullIfPresent @Valid JsonNullable<GeoJsonPoint> location,
-    @NotNullIfPresent @WithinDays(SCHEDULING_WINDOW_DAYS) JsonNullable<LocalDate> ruleStart,
+    @NotNullIfPresent @WithinDays JsonNullable<LocalDate> ruleStart,
     JsonNullable<LocalDate> ruleEnd, //null if rule continues indefinitely
     @NotNullIfPresent JsonNullable<AvailabilityFrequency> frequency,
     JsonNullable<DayOfWeek> startDayOfWeek, //null if startDayOfMonth is submitted and not null
     @Min(1) @Max(31) JsonNullable<Integer> startDayOfMonth, //null if startDayOfWeek is submitted and not null
     @NotNullIfPresent JsonNullable<LocalTime> startTime,
-    @NotNullIfPresent @MaxDurationHours(MAX_DURATION_HOURS) JsonNullable<Duration> duration
+    @NotNullIfPresent @MaxDurationHours JsonNullable<Duration> duration
 ) {
     @AssertTrue(message = "Rule end date must be after rule start date")
     private boolean isEndAfterStart() {

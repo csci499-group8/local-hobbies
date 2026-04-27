@@ -10,8 +10,6 @@ import org.locationtech.jts.geom.Point;
 
 import java.time.*;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-
 @Entity
 @Table(name = "recurring_availability")
 @Getter
@@ -53,7 +51,7 @@ public class RecurringAvailability implements UserOwned {
 
     @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
     @Column(nullable = false)
-    @MaxDurationHours(MAX_DURATION_HOURS)
+    @MaxDurationHours
     private Duration duration;
 
     @Column(name = "time_zone_id", nullable = false, length = 64)

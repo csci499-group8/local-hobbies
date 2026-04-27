@@ -1,7 +1,12 @@
 openapi: 3.0.3
 info:
   title: Local Hobbies API
-  description: API for a user-matching application based on hobbies, location, and availability.
+  description: |
+    API for a user-matching application based on hobbies, location, and availability.
+    ## Onboarding flow:
+    1. Authenticate via `POST /auth/signup` or `POST /auth/login`. Returns an `AuthResponse` containing JWT information, the user ID, and an `onboardingComplete` boolean.
+    2. If `onboardingComplete` is false, use `GET /users/onboarding` to identify incomplete sections. If the `hobbies` section is incomplete, the set of global hobbies can be retrieved using `GET /hobbies/global`. Submit onboarding information via `POST /users/onboarding`. Returns a new `AuthResponse`.
+    3. Once `onboardingComplete` is true, use the token from the latest `AuthResponse` to access protected endpoints.
   version: 1.0.0
 servers:
   - url: http://localhost:8080/api
@@ -405,7 +410,7 @@ paths:
       tags:
         - Hobbies
       summary: Get global hobbies
-      description: Get list of all hobbies users can select from. Hobbies are
+      description: Get a list of all the hobbies users can select from. Hobbies are
         organized first by category, then by name.
       security: []
       responses:
@@ -874,7 +879,7 @@ paths:
       tags:
         - Matches
       summary: Get current user's saved matches
-      description: Get saved matches organized by hobby category, then hobby, then save date
+#      description: Get saved matches organized by hobby category, then hobby, then save date
       responses:
         '200':
           description: Saved matches retrieved successfully
@@ -1012,7 +1017,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: "Match restored successfully"
+          description: Match restored successfully
           content:
             application/json:
               schema:
@@ -1074,7 +1079,7 @@ components:
       required:
         - auth
         - user
-      description: response to successful signup, login, and onboarding
+      description: Response to a successful signup, login, or onboarding
       properties:
         auth:
           type: object
@@ -1109,13 +1114,13 @@ components:
               example: 123
             onboardingComplete:
               type: boolean
-              description: used to route to either homepage or onboarding page
+              description: Boolean used to route to either homepage (true) or onboarding page (false)
               example: false
 
     # ==================== User, Homepage, & Profile Schemas ====================
     UserOnboardingIncompleteSection:
       type: object
-      description: section of a user's account information that is required and incomplete
+      description: Section of a user's account information that is required and incomplete
       required:
         - name
         - reason
@@ -1126,14 +1131,14 @@ components:
           example: hobbies
         reason:
           type: string
-          enum: [noValue, minCountNotMet]
+          enum: [No value, Minimum number of entries not met]
           example: minCountNotMet
 
     UserOnboardingStatusResponse:
       type: object
       required:
         - incompleteSections
-      description: list of sections that are yet to be completed for onboarding
+      description: List of the sections that are yet to be completed for onboarding
       properties:
         incompleteSections:
           type: array
@@ -1142,7 +1147,7 @@ components:
 
     UserOnboardingRequest:
       type: object
-      description: request to complete onboarding; contains only fields that are being updated
+      description: Request to complete onboarding. Should contain only fields that are being updated
       properties:
         name:
           type: string
@@ -1175,7 +1180,7 @@ components:
 
     UserUpdateRequest:
       type: object
-      description: contains only fields that are being changed
+      description: Should contain only fields that are being updated
       properties:
         email:
           type: string
@@ -1190,7 +1195,7 @@ components:
         genderDisplayed:
           type: string
           nullable: true
-          description: null if being removed from account
+          description: Null if being removed from account
           example: Woman
         genderMatched:
           type: string
@@ -1199,7 +1204,7 @@ components:
         bio:
           type: string
           nullable: true
-          description: null if being removed from account
+          description: Null if being removed from account
           example: Love hiking and coffee!
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
@@ -1208,8 +1213,8 @@ components:
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
           type: string
-          description: omitted if not changed or if update was attempted by user
-            but photo upload failed; null if being removed from account
+          description: Omitted if not changed or if update was attempted by user
+            but photo upload failed. Null if being removed from account
           nullable: true
           example: https://example.com/photos/123.jpg
         showAge:
@@ -1347,12 +1352,12 @@ components:
         age:
           type: integer
           nullable: true
-          description: null if showAge is false
+          description: Null if showAge is false
           example: 29
         genderDisplayed:
           type: string
           nullable: true
-          description: null if not set or if showGenderDisplayed is false
+          description: Null if not set or if showGenderDisplayed is false
           example: Woman
         bio:
           type: string
@@ -1404,12 +1409,12 @@ components:
         age:
           type: integer
           nullable: true
-          description: null if showAge is false
+          description: Null if showAge is false
           example: 29
         genderDisplayed:
           type: string
           nullable: true
-          description: null if not set or if showGenderDisplayed is false
+          description: Null if not set or if showGenderDisplayed is false
           example: Woman
         bio:
           type: string
@@ -1505,16 +1510,16 @@ components:
         caption:
           type: string
           nullable: true
-          description: may be omitted or null
+          description: May be omitted or null
           example: Had a great time!
 
     HobbyPhotoUpdateRequest:
       type: object
-      description: only contains changed fields
+      description: Should contain only fields that are being updated
       properties:
         hobbyId:
           type: integer
-          description: should only be changed if current value is incorrect
+          description: Should be changed only if current value is incorrect
           example: 49
         caption:
           type: string
@@ -1646,7 +1651,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: omitted or null if rule continues indefinitely
+          description: Omitted or null if rule continues indefinitely
           example: "2026-12-31"
         frequency:
           type: string
@@ -1656,12 +1661,12 @@ components:
           type: string
           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
           example: Tuesday
-          description: day of week (for weekly/every two weeks); omitted or null if startDayOfMonth is submitted
+          description: Day of week (for weekly/every two weeks). Omitted or null if startDayOfMonth is submitted
         startDayOfMonth:
           type: integer
           minimum: 1
           maximum: 31
-          description: day of month (for monthly); omitted or null if startDayOfWeek is submitted
+          description: Day of month (for monthly). Omitted or null if startDayOfWeek is submitted
         startTime:
           type: string
           format: time
@@ -1684,7 +1689,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: null if rule continues indefinitely
+          description: Null if rule continues indefinitely
           example: "2026-12-31"
         frequency:
           type: string
@@ -1695,13 +1700,13 @@ components:
           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
           example: Tuesday
           nullable: true
-          description: day of week (for weekly/every two weeks); null if startDayOfMonth is submitted and not null
+          description: Day of week (for weekly/every two weeks). Null if startDayOfMonth is submitted and not null
         startDayOfMonth:
           type: integer
           minimum: 1
           maximum: 31
           nullable: true
-          description: day of month (for monthly); null if startDayOfWeek is submitted and not null
+          description: Day of month (for monthly). Null if startDayOfWeek is submitted and not null
         startTime:
           type: string
           format: time
@@ -1741,7 +1746,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: null if rule continues indefinitely
+          description: Null if rule continues indefinitely
           example: "2026-12-31"
         frequency:
           type: string
@@ -1752,13 +1757,13 @@ components:
           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
           example: Tuesday
           nullable: true
-          description: day of week (for weekly/every two weeks); null if startDayOfMonth is not null
+          description: Day of week (for weekly/every two weeks). Null if startDayOfMonth is not null
         startDayOfMonth:
           type: integer
           minimum: 1
           maximum: 31
           nullable: true
-          description: day of month (for monthly); null if startDayOfWeek is not null
+          description: Day of month (for monthly). Null if startDayOfWeek is not null
         startTime:
           type: string
           format: time
@@ -1785,30 +1790,30 @@ components:
         exceptionReason:
           type: string
           nullable: true
-          description: may be omitted or null
+          description: May be omitted or null
           example: Traveling
         isCancelled:
           type: boolean
         overrideLocation:
           nullable: true
-          description: omitted or null if isCancelled = true
+          description: Omitted or null if isCancelled = true
           allOf:
             - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
           nullable: true
-          description: omitted or null if isCancelled = true
+          description: Omitted or null if isCancelled = true
           example: "14:00"
         overrideDuration:
           type: string
           nullable: true
-          description: ISO 8601 duration; omitted or null if isCancelled = true
+          description: ISO 8601 duration. Omitted or null if isCancelled = true
           example: PT2H
 
     AvailabilityExceptionOnboardingCreationRequest:
       type: object
-      description: request used during onboarding; omits recurringAvailabilityId,
+      description: Request used during onboarding. Omits recurringAvailabilityId,
         instead relying on JSON nesting to associate with recurring availability
       required:
         - exceptionDate
@@ -1821,28 +1826,28 @@ components:
         exceptionReason:
           type: string
           nullable: true
-          description: may be omitted or null
+          description: May be omitted or null
           example: Traveling
         isCancelled:
           type: boolean
         overrideLocation:
           nullable: true
-          description: omitted or null if isCancelled = true
+          description: Omitted or null if isCancelled = true
           allOf:
             - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
           nullable: true
-          description: omitted or null if isCancelled = true
+          description: Omitted or null if isCancelled = true
         overrideDuration:
           type: string
           nullable: true
-          description: ISO 8601 duration; omitted or null if isCancelled = true
+          description: ISO 8601 duration. Omitted or null if isCancelled = true
 
     AvailabilityExceptionUpdateRequest:
       type: object
-      description: note that recurringAvailabilityId and exceptionDate cannot be changed
+      description: Note that recurringAvailabilityId and exceptionDate cannot be changed
       properties:
         exceptionReason:
           type: string
@@ -1851,16 +1856,16 @@ components:
         isCancelled:
           type: boolean
         overrideLocation:
-          description: null if isCancelled = true
+          description: Null if isCancelled = true
           allOf:
           - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
-          description: null if isCancelled = true
+          description: Null if isCancelled = true
         overrideDuration:
           type: string
-          description: ISO 8601 duration; null if isCancelled = true
+          description: ISO 8601 duration. Null if isCancelled = true
 
     AvailabilityExceptionResponse:
       type: object
@@ -1895,24 +1900,24 @@ components:
           type: boolean
         overrideLocation:
           nullable: true
-          description: null if isCancelled = true
+          description: Null if isCancelled = true
           allOf:
             - $ref: '#/components/schemas/GeoJsonPoint'
         overrideStartTime:
           type: string
           format: time
           nullable: true
-          description: null if isCancelled = true
+          description: Null if isCancelled = true
           example: "16:00"
         overrideDuration:
           type: string
           nullable: true
-          description: ISO 8601 duration; null if isCancelled = true
+          description: ISO 8601 duration. Null if isCancelled = true
           example: PT3H
 
     AvailabilityOnboardingRequests:
       type: object
-      description: availability creation requests submitted during onboarding
+      description: Availability creation requests submitted during onboarding
       required:
         - oneTimes
         - recurringsWithExceptions
@@ -1928,7 +1933,7 @@ components:
 
     RecurringAvailabilityWithExceptions:
       type: object
-      description: recurring availability and its associated exceptions, submitted during onboarding
+      description: Recurring availability and its associated exceptions, submitted during onboarding
       required:
         - recurring
         - exceptions
@@ -1942,7 +1947,7 @@ components:
 
     ScheduleResponse:
       type: object
-      description: flattened availability intervals and the availability objects they correspond to
+      description: Flattened availability intervals and the availability objects they correspond to
       required:
         - intervals
         - availabilities
@@ -1976,7 +1981,7 @@ components:
       properties:
         sourceType:
           type: string
-          enum: [One-time, Recurring, Exception]
+          enum: [One-time availability, Recurring availability, Availability exception]
         sourceId:
           type: integer
         location:
@@ -2002,7 +2007,7 @@ components:
         distanceKilometers:
           type: number
           format: double
-          description: distance between the two availabilities
+          description: Distance between the two overlapping availabilities
           example: 4.3
         start:
           type: string
@@ -2050,7 +2055,7 @@ components:
       properties:
         hobby:
           type: string
-          description: one of current user's hobbies
+          description: Must be one of the current user's hobbies
           example: Hiking
         radiusKilometers:
           type: integer
@@ -2062,16 +2067,16 @@ components:
           example: 45
         filters:
           type: array
-          description: list of the filters used in the search; 'type' indicates
-            what the filter's criteria are; 'isHard' indicates whether the filter
-            is mandatory or only for ranking results; the final field contains the
+          description: List of the filters used in the search. 'type' indicates
+            what the filter's criteria are. 'isHard' indicates whether the filter
+            is mandatory or only for ranking results. The final field contains the
             filter criteria and is dependent on 'type'
           items:
             $ref: '#/components/schemas/MatchSearchFilter'
 
     MatchSearchFilter:
       type: object
-      description: polymorphic search filter; 'type' dictates what the type of the
+      description: Polymorphic search filter. 'type' dictates what the type of the
         last field, the filter criteria, is
       required:
         - type
@@ -2081,10 +2086,10 @@ components:
       properties:
         type:
           type: string
-          enum: [GENDERS, MIN_AGE, MAX_AGE, EXPERIENCE_LEVEL]
+          enum: [Genders, Minimum age, Maximum age, Experience level]
         isHard:
           type: boolean
-          description: if true, excludes users not matching this filter; if false,
+          description: If true, excludes users not matching this filter. If false,
             only used for ranking search results
           example: true
       oneOf:
@@ -2098,7 +2103,7 @@ components:
                 type: string
                 enum: [Man, Nonbinary, Woman]
                 example: Nonbinary
-        - description: minimum age
+        - description: Minimum age
           required:
             - minAge
           properties:
@@ -2106,7 +2111,7 @@ components:
               type: integer
               minimum: 13
               example: 25
-        - description: maximum age
+        - description: Maximum age
           required:
             - maxAge
           properties:
@@ -2114,7 +2119,7 @@ components:
               type: integer
               maximum: 120
               example: 40
-        - description: experience level
+        - description: Experience level
           required:
             - experienceLevel
           properties:
@@ -2136,15 +2141,15 @@ components:
         distanceType:
           type: string
           enum: [Home, Nearest overlapping availability]
-          description: category of the calculated shortest distance between the users;
-            "Home" indicates the shortest distance is between the users' default
-            locations; "Nearest overlapping availability" indicates the distance
+          description: Category of the calculated shortest distance between the users.
+            'Home' indicates the shortest distance is between the users' default
+            locations. 'Nearest overlapping availability' indicates the distance
             is between the users' geographically closest overlapping availabilities
           example: Nearest overlapping availability
         distanceKilometers:
           type: number
           format: double
-          description: value of the shortest distance between the users
+          description: Value of the shortest distance between the users
           example: 4.3
         overlappingAvailabilities:
           type: array
@@ -2166,7 +2171,7 @@ components:
         notes:
           type: string
           nullable: true
-          description: may be omitted or null
+          description: May be omitted or null
           example: Brings her dog on hikes
 
     SavedMatchUpdateRequest:
@@ -2231,7 +2236,7 @@ components:
     # ==================== Cloud Upload Schemas ====================
     UploadUrlRequest:
       type: object
-      description: request for presigned URL to upload file to cloud storage
+      description: Request for presigned URL to upload file to cloud storage
       required:
         - fileName
         - contentType
@@ -2256,7 +2261,7 @@ components:
         uploadUrl:
           type: string
           format: uri
-          description: cloud storage URL for image binary save request
+          description: Cloud storage URL for image binary save request
         expirationTime:
           type: string
           format: date-time
@@ -2302,7 +2307,7 @@ components:
             $ref: '#/components/schemas/GlobalError'
 
     ForbiddenError: #403
-      description: "Insufficient permissions to access this resource."
+      description: "The request could not be completed due to insufficient permissions to access the resource."
       content:
         application/json:
           schema:

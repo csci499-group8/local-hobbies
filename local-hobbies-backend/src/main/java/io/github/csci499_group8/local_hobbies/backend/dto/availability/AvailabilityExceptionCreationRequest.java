@@ -9,15 +9,12 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Duration;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.SCHEDULING_WINDOW_DAYS;
-
 public record AvailabilityExceptionCreationRequest(
     @NotNull Integer recurringAvailabilityId,
-    @NotNull @WithinDays(SCHEDULING_WINDOW_DAYS) LocalDate exceptionDate,
+    @NotNull @WithinDays LocalDate exceptionDate,
     String exceptionReason, //may be omitted or null
     @NotNull boolean isCancelled,
     @Valid GeoJsonPoint overrideLocation, //omitted or null if isCancelled = true
     LocalTime overrideStartTime, //omitted or null if isCancelled = true
-    @MaxDurationHours(MAX_DURATION_HOURS) Duration overrideDuration //omitted or null if isCancelled = true
+    @MaxDurationHours Duration overrideDuration //omitted or null if isCancelled = true
 ) {}

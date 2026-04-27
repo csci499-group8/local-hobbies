@@ -24,6 +24,18 @@ application:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
       expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  user:
+    onboarding:
+      min-num-hobbies: ${ONBOARDING_MIN_NUM_HOBBIES:3}
+      min-num-availabilities: ${ONBOARDING_MIN_NUM_AVAILABILITIES:1}
+  availability:
+    #time window within which an availability can be scheduled; also time window
+    #within which recurring availabilities are projected to intervals
+    scheduling-window-days: ${AVAILABILITY_SCHEDULING_WINDOW_DAYS:180}
+    #time window within which users' schedules are compared
+    overlap-window-days: ${AVAILABILITY_OVERLAP_WINDOW_DAYS:30}
+    #maximum duration of an availability
+    max-duration-hours: ${AVAILABILITY_MAX_DURATION_HOURS:168}
 
 logging:
   level:

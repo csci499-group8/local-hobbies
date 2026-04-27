@@ -11,8 +11,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import static io.github.csci499_group8.local_hobbies.backend.config.AvailabilityConstants.MAX_DURATION_HOURS;
-
 @Entity
 @Table(name = "availability_exception", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"recurring_availability_id", "exception_date"})
@@ -51,7 +49,7 @@ public class AvailabilityException implements UserOwned {
 
     @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
     @Column(name = "override_duration")
-    @MaxDurationHours(MAX_DURATION_HOURS)
+    @MaxDurationHours
     private Duration overrideDuration;
 
 }
