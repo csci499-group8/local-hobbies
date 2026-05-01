@@ -14,7 +14,6 @@ public record UserHomepageResponse (
      * Minimal user info for homepage display
      */
     public record UserSummary(
-        @NotNull Integer id,
         @NotBlank String name,
         String profilePhotoUrl //nullable
     ) {}
@@ -38,6 +37,6 @@ public record UserHomepageResponse (
      * Number of matches user has
      */
     public record MatchSummary(
-        @NotNull Integer count
+        @NotNull Integer inboundMatchCount
     ) {}
 }

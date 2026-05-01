@@ -9,7 +9,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record UserResponse(
-    @NotNull Integer id,
     @NotBlank String username,
     @NotBlank String email,
     @NotBlank String name,

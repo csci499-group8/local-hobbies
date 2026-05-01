@@ -10,9 +10,10 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
+import java.util.UUID;
 
 public record OtherUserProfileResponse (
-    @NotNull Integer id,
+    @NotNull UUID id,
     @NotBlank String name,
     Integer age, //null if showAge is false
     String genderDisplayed, //null if not set or if showGenderDisplayed is false

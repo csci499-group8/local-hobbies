@@ -6,10 +6,10 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public record OneTimeAvailabilityResponse(
-    @NotNull Integer id,
-    @NotNull Integer userId,
+    @NotNull UUID id,
     @Valid @NotNull GeoJsonPoint location,
     @NotNull OffsetDateTime start,
     @NotNull Duration duration

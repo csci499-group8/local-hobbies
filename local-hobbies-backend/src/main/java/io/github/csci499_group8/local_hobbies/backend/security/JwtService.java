@@ -10,31 +10,50 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class JwtService {
 
     private final SecretKey secretKey;
-    private final long expirationMs;
+    private final Duration accessDuration;
+    private final Duration refreshDuration;
 
     public JwtService(
             @Value("${application.security.jwt.secret-key}") String secretKeyString,
-            @Value("${application.security.jwt.expiration-ms}") long expirationMs) {
+            @Value("${application.security.jwt.access-duration}") Duration accessDuration,
+            @Value("${application.security.jwt.refresh-duration}") Duration refreshDuration) {
         //convert Base64-encoded string to key
         this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString));
-        this.expirationMs = expirationMs;
+        this.accessDuration = accessDuration;
+        this.refreshDuration = refreshDuration;
     }
 
-    public String generateToken(String userId, boolean onboardingComplete) {
-        Date now = new Date();
-        Date expirationTime = new Date(System.currentTimeMillis() + expirationMs);
+    public String generateAccessToken(UUID userId, boolean onboardingComplete) {
+        Map<String, Object> extraClaims = Map.of("type", "ACCESS",
+                                                 "onboardingComplete", onboardingComplete);
+        return buildToken(userId, extraClaims, accessDuration);
+    }
+
+    public String generateRefreshToken(UUID userId, boolean onboardingComplete) {
+        Map<String, Object> extraClaims = Map.of("type", "REFRESH",
+                                                 "onboardingComplete", onboardingComplete);
+        return buildToken(userId, extraClaims, refreshDuration);
+    }
+
+    public String buildToken(UUID userId, Map<String, Object> extraClaims, Duration duration) {
+        Instant now = Instant.now();
+        Instant expirationTime = now.plus(duration);
 
         return Jwts.builder()
-                   .claim("onboardingComplete", onboardingComplete)
-                   .subject(userId)
-                   .issuedAt(now)
-                   .expiration(expirationTime)
+                   .claims(extraClaims)
+                   .subject(userId.toString())
+                   .issuedAt(Date.from(now))
+                   .expiration(Date.from(expirationTime))
                    .signWith(secretKey)
                    .compact();
     }

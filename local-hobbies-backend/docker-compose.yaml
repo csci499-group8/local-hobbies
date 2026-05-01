@@ -2,6 +2,7 @@
 services:
   db:
     image: postgis/postgis:16-3.4
+    profiles: ["local-db"]
     ports:
       - "5433:5432"
     environment:
@@ -23,7 +24,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/local_hobbies
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: admin
-      JWT_SECRET_KEY: zU1qZQt8jzer6mYp04F74Ha9+f7Yh/ilAN1ZK8EBy08=
+      DEV_SPRING_DATASOURCE_URL: ${DEV_SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/local_hobbies}
+      DEV_SPRING_DATASOURCE_USERNAME: ${DEV_SPRING_DATASOURCE_USERNAME:-postgres}
+      DEV_SPRING_DATASOURCE_PASSWORD: ${DEV_SPRING_DATASOURCE_PASSWORD:-admin}
+      DEV_JWT_SECRET_KEY: ${DEV_JWT_SECRET_KEY:-zU1qZQt8jzer6mYp04F74Ha9+f7Yh/ilAN1ZK8EBy08=}

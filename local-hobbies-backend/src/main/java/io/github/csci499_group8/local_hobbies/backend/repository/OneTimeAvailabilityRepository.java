@@ -5,12 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface OneTimeAvailabilityRepository extends JpaRepository<OneTimeAvailability, Integer> {
+public interface OneTimeAvailabilityRepository extends JpaRepository<OneTimeAvailability, UUID> {
 
-    Integer countByUserId(Integer userId);
+    Integer countByUserId(UUID userId);
 
-    List<OneTimeAvailability> findAllByUserId(Integer userId);
+    List<OneTimeAvailability> findAllByUserId(UUID userId);
 
 }

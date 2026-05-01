@@ -7,6 +7,7 @@ import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -18,8 +19,9 @@ import java.time.OffsetDateTime;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @Column(unique = true, nullable = false, length = 40)
     private String username;
@@ -58,8 +60,8 @@ public class User {
     @Column(name = "public_contact_info")
     private String publicContactInfo;
 
-    @Column(name = "profile_photo_url")
-    private String profilePhotoUrl;
+    @Column(name = "profile_photo_key")
+    private String profilePhotoKey;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender_matched")

@@ -5,8 +5,10 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienc
 import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public record HobbyResponse(
-    @NotNull Integer id,
+    @NotNull UUID id,
     @NotNull HobbyName name,
     @NotNull HobbyCategory category,
     @NotNull HobbyExperienceLevel experienceLevel

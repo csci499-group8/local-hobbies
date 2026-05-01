@@ -7,7 +7,6 @@ import io.github.csci499_group8.local_hobbies.backend.dto.user.*;
 import io.github.csci499_group8.local_hobbies.backend.service.AuthService;
 import io.github.csci499_group8.local_hobbies.backend.service.UserService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -27,13 +27,13 @@ public class UserController {
 
     @GetMapping("/onboarding")
     public ResponseEntity<Map<String, List<UserOnboardingIncompleteSection>>> getOnboardingStatus(
-            @RequestAttribute("userId") Integer userId) {
+            @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(Map.of("incompleteSections", userService.getIncompleteSections(userId)));
     }
 
     @PostMapping("/onboarding")
     public ResponseEntity<AuthResponse> completeOnboarding(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody UserOnboardingRequest request) {
         //also returns a fresh token with updated claims/status
         return ResponseEntity.ok(authService.completeOnboarding(userId, request));
@@ -41,20 +41,20 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<UserResponse> getCurrentUser(
-            @RequestAttribute("userId") Integer userId) {
+            @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(userService.getCurrentUser(userId));
     }
 
     @PutMapping
     public ResponseEntity<UserResponse> updateCurrentUser(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody UserUpdateRequest request) {
         return ResponseEntity.ok(userService.updateUser(userId, request));
     }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteCurrentUser(
-            @RequestAttribute("userId") Integer userId) {
+            @RequestAttribute("userId") UUID userId) {
         userService.deleteUser(userId);
 
         return ResponseEntity.noContent().build();
@@ -62,7 +62,7 @@ public class UserController {
 
     @PostMapping("/profile-photo/upload-url")
     public ResponseEntity<UploadUrlResponse> getProfilePhotoUploadUrl(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody UploadUrlRequest request) {
         return ResponseEntity.ok(userService.generatePresignedUploadUrl(
                 userId, //to generate user-specific file path
@@ -72,20 +72,20 @@ public class UserController {
 
     @GetMapping("/homepage")
     public ResponseEntity<UserHomepageResponse> getHomepage(
-            @RequestAttribute("userId") Integer userId) {
+            @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(userService.getHomepage(userId));
     }
 
     @GetMapping("/profile")
     public ResponseEntity<CurrentUserProfileResponse> getCurrentUserProfile(
-            @RequestAttribute("userId") Integer userId) {
+            @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(userService.getCurrentUserProfile(userId));
     }
 
     @GetMapping("/{otherUserId}/profile")
     public ResponseEntity<OtherUserProfileResponse> getOtherUserProfile(
-            @RequestAttribute("userId") Integer currentUserId,
-            @PathVariable @Positive Integer otherUserId) {
+            @RequestAttribute("userId") UUID currentUserId,
+            @PathVariable UUID otherUserId) {
         return ResponseEntity.ok(userService.getOtherUserProfile(currentUserId, otherUserId));
     }
 

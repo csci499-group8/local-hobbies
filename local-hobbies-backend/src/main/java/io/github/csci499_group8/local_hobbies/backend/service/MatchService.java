@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.service;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.availability.AvailabilityOverlapResponse;
+import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyOverlapResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.match.*;
 import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFoundException;
 import io.github.csci499_group8.local_hobbies.backend.mapper.MatchMapper;
@@ -9,6 +10,8 @@ import io.github.csci499_group8.local_hobbies.backend.model.User;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserSpecifications;
+import io.github.csci499_group8.local_hobbies.backend.repository.projections.MutualMatchProjection;
+import io.github.csci499_group8.local_hobbies.backend.repository.projections.SavedMatchProjection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Point;
@@ -17,10 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Stream;
+import java.util.*;
 
 import static io.github.csci499_group8.local_hobbies.backend.service.LocationService.calculateDistanceKilometers;
+
+//TODO: add deletionTime field to saved_match table, implement cron job to hard delete matches
 
 @Slf4j
 @Service
@@ -30,7 +34,9 @@ public class MatchService {
     private final SavedMatchRepository savedMatchRepository;
     private final MatchMapper matchMapper;
     private final UserService userService;
+    private final HobbyService hobbyService;
     private final AvailabilityService availabilityService;
+    private final StorageService storageService;
 
     private record MatchedUserWithOverlaps(
             User matchedUser,
@@ -40,7 +46,7 @@ public class MatchService {
     // --- methods called by MatchController ---
 
     @Transactional(readOnly = true)
-    public List<MatchSearchResultResponse> searchForMatches(Integer userId, MatchSearchRequest request) {
+    public List<MatchSearchResultResponse> searchForMatches(UUID userId, MatchSearchRequest request) {
         User currentUser = userService.getUserByIdOrThrow(userId);
 
         //database-level hard filters
@@ -48,7 +54,7 @@ public class MatchService {
         List<User> matchCandidates = userService.findUsersBySpecification(hardFilterSpec);
 
         //hard filtering by availability distance and overlap
-        Stream<MatchedUserWithOverlaps> matches = matchCandidates.stream().map(candidate -> {
+        List<MatchedUserWithOverlaps> matches = matchCandidates.stream().map(candidate -> {
             List<AvailabilityOverlapResponse> overlaps = availabilityService
                 .getOverlappingAvailabilities(userId, candidate.getId())
                 .stream()
@@ -58,10 +64,18 @@ public class MatchService {
                 ).toList();
 
             return new MatchedUserWithOverlaps(candidate, overlaps);
-        });
+        }).filter(
+                match -> !match.overlaps().isEmpty()
+        ).toList();
+
+        //get URLs for matches' profile photos
+        Map<String, String> matchProfilePhotoKeyToUrl =
+                getBatchProfilePhotoUrls(matches.stream()
+                                                .map(MatchedUserWithOverlaps::matchedUser)
+                                                .toList());
 
         //calculate MatchSearchResultResponse.distanceKilometers and return response
-        return matches.map(matchedUserWithOverlaps -> {
+        return matches.stream().map(matchedUserWithOverlaps -> {
             Point currentUserLocation = currentUser.getLocationPoint();
             Point matchedUserLocation = matchedUserWithOverlaps.matchedUser().getLocationPoint();
             double homeDistanceKilometers = calculateDistanceKilometers(currentUserLocation,
@@ -73,10 +87,12 @@ public class MatchService {
                                                                          .orElse(Double.MAX_VALUE);
 
             MatchSearchResultResponse.MatchDistanceType distanceType = (homeDistanceKilometers < minOverlapDistanceKilometers)
-                    ? MatchSearchResultResponse.MatchDistanceType.HOME : MatchSearchResultResponse.MatchDistanceType.NEAREST_OVERLAPPING_AVAILABILITY;
+                    ? MatchSearchResultResponse.MatchDistanceType.HOME
+                    : MatchSearchResultResponse.MatchDistanceType.NEAREST_OVERLAPPING_AVAILABILITY;
             Double minDistanceKilometers = Math.min(homeDistanceKilometers, minOverlapDistanceKilometers);
 
             return matchMapper.toSearchResultResponse(matchedUserWithOverlaps.matchedUser(),
+                                                      matchProfilePhotoKeyToUrl.get(matchedUserWithOverlaps.matchedUser.getProfilePhotoKey()),
                                                       distanceType,
                                                       minDistanceKilometers,
                                                       matchedUserWithOverlaps.overlaps());
@@ -85,35 +101,35 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<SavedMatchResponse> getSavedMatches(Integer userId) {
-        return savedMatchRepository.findAllByUserIdAndStatus(userId, MatchStatus.ACTIVE).stream()
-                                   .map(this::mapToSavedMatchResponse)
-                                   .toList();
+    public List<SavedMatchResponse> getSavedMatches(UUID userId) {
+        return mapBatchProjectionsToSavedMatchResponses(
+                savedMatchRepository.findAllByUserIdAndStatus(userId, MatchStatus.ACTIVE)
+        );
     }
 
     @Transactional
-    public SavedMatchResponse createSavedMatch(Integer userId, SavedMatchCreationRequest request) {
-        if (savedMatchRepository.existsByUserIdAndSavedUserIdAndHobbyNameAndStatus(userId, request.savedUserId(),
-                                                                                   request.hobby(), MatchStatus.ACTIVE)) {
+    public SavedMatchResponse createSavedMatch(UUID userId, SavedMatchCreationRequest request) {
+        if (savedMatchRepository.existsByUserIdAndSavedUserIdAndStatus(userId, request.savedUserId(),
+                                                                                   MatchStatus.ACTIVE)) {
             throw new IllegalStateException("Saved match already exists");
         }
 
         SavedMatch match = matchMapper.toEntity(request, userId);
-        return mapToSavedMatchResponse(savedMatchRepository.save(match));
+        return mapMatchToSavedMatchResponse(savedMatchRepository.saveAndFlush(match)); //sync creationTime in
     }
 
     @Transactional
-    public SavedMatchResponse updateSavedMatch(Integer userId, Integer matchId,
+    public SavedMatchResponse updateSavedMatch(UUID userId, UUID matchId,
                                                SavedMatchUpdateRequest request) {
         SavedMatch match = findMatchByUserIdAndIdAndStatus(userId, matchId, MatchStatus.ACTIVE);
 
         matchMapper.updateEntity(request, match);
-        return mapToSavedMatchResponse(savedMatchRepository.save(match));
+        return mapMatchToSavedMatchResponse(savedMatchRepository.save(match));
     }
 
     //soft deletion; database will permanently delete if not restored within some time period
     @Transactional
-    public void deleteSavedMatch(Integer userId, Integer matchId) {
+    public void deleteSavedMatch(UUID userId, UUID matchId) {
         SavedMatch match = findMatchByUserIdAndIdAndStatus(userId, matchId, MatchStatus.ACTIVE);
 
         match.softDelete();
@@ -121,18 +137,38 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<SavedMatchResponse> getDeletedSavedMatches(Integer userId) {
-        return savedMatchRepository.findAllByUserIdAndStatus(userId, MatchStatus.DELETED).stream()
-                                   .map(this::mapToSavedMatchResponse)
-                                   .toList();
+    public List<SavedMatchResponse> getDeletedSavedMatches(UUID userId) {
+        return mapBatchProjectionsToSavedMatchResponses(
+                savedMatchRepository.findAllByUserIdAndStatus(userId, MatchStatus.DELETED)
+        );
     }
 
     @Transactional
-    public SavedMatchResponse restoreSavedMatch(Integer userId, Integer matchId) {
+    public SavedMatchResponse restoreSavedMatch(UUID userId, UUID matchId) {
         SavedMatch match = findMatchByUserIdAndIdAndStatus(userId, matchId, MatchStatus.DELETED);
 
         match.restore();
-        return mapToSavedMatchResponse(savedMatchRepository.save(match));
+        return mapMatchToSavedMatchResponse(savedMatchRepository.save(match));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MutualMatchResponse> getMutualMatches(UUID userId) {
+        List<MutualMatchProjection> projections = savedMatchRepository.findAllMutualMatchProjections(userId);
+
+        Map<String, String> profilePhotoKeyToUrl =
+                getBatchProfilePhotoUrls(projections.stream().map(MutualMatchProjection::getSavedUser).toList());
+
+        return projections.stream().map(
+                projection -> {
+                    User savedUser = projection.getSavedUser();
+
+                    List<HobbyOverlapResponse> overlappingHobbies =
+                            hobbyService.getOverlappingHobbies(userId, savedUser.getId());
+
+                    return matchMapper.toMutualMatchResponse(projection,
+                                                             profilePhotoKeyToUrl.get(savedUser.getProfilePhotoKey()),
+                                                             overlappingHobbies);
+                }).toList();
     }
 
     // --- private helper methods ---
@@ -143,7 +179,7 @@ public class MatchService {
      * @throws ResourceNotFoundException if match does not exist, match is not in
      *                                   expected state, or request is unauthorized
      */
-    private SavedMatch findMatchByUserIdAndIdAndStatus(Integer userId, Integer matchId, MatchStatus status) {
+    private SavedMatch findMatchByUserIdAndIdAndStatus(UUID userId, UUID matchId, MatchStatus status) {
         SavedMatch match = savedMatchRepository.findByIdAndStatus(matchId, status).orElseThrow(
                 () -> new ResourceNotFoundException("Match not found with ID: " + matchId));
 
@@ -157,9 +193,49 @@ public class MatchService {
         return match;
     }
 
-    private SavedMatchResponse mapToSavedMatchResponse(SavedMatch savedMatch) {
+    //for singular SavedMatches
+    private SavedMatchResponse mapMatchToSavedMatchResponse(SavedMatch savedMatch) {
         User savedUser = userService.getUserByIdOrThrow(savedMatch.getSavedUserId());
-        return matchMapper.toSavedMatchResponse(savedMatch, savedUser);
+        String savedUserProfilePhotoUrl = getProfilePhotoUrl(savedUser.getProfilePhotoKey());
+
+        List<HobbyOverlapResponse> overlappingHobbies = hobbyService.getOverlappingHobbies(savedMatch.getUserId(),
+                                                                                           savedMatch.getSavedUserId());
+
+        return matchMapper.toSavedMatchResponse(savedMatch, savedUser, savedUserProfilePhotoUrl, overlappingHobbies);
+    }
+
+    //for batch-fetched SavedMatches, for which fetching savedUser is bundled into the call
+    private List<SavedMatchResponse> mapBatchProjectionsToSavedMatchResponses(List<SavedMatchProjection> savedMatchProjections) {
+        Map<String, String> profilePhotoKeyToUrl =
+                getBatchProfilePhotoUrls(savedMatchProjections.stream().map(SavedMatchProjection::getSavedUser).toList());
+
+        return savedMatchProjections.stream().map(
+                projection -> {
+                    String profilePhotoUrl = profilePhotoKeyToUrl.get(projection.getSavedUser().getProfilePhotoKey());
+
+                    List<HobbyOverlapResponse> overlappingHobbies =
+                            hobbyService.getOverlappingHobbies(projection.getSavedMatch().getUserId(),
+                                                               projection.getSavedMatch().getSavedUserId());
+
+                    return matchMapper.toSavedMatchResponse(projection, profilePhotoUrl, overlappingHobbies);
+                }
+        ).toList();
+    }
+
+    private String getProfilePhotoUrl(String objectKey) {
+        if (objectKey == null) return null;
+
+        return storageService.createPresignedGetUrl(objectKey);
+    }
+
+    private Map<String, String> getBatchProfilePhotoUrls(List<User> matchedUsers) {
+        List<String> keys = matchedUsers.stream()
+                                        .map(User::getProfilePhotoKey)
+                                        .toList();
+
+        return (!keys.isEmpty())
+                ? storageService.createBatchPresignedGetUrls(keys)
+                : Collections.emptyMap();
     }
 
 }

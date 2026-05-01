@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.service;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthLoginRequest;
+import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthRefreshRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthSignupRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.user.UserOnboardingRequest;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class AuthService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
         try {
-            User user = userService.getUserByIdOrThrow(Integer.parseInt(userId));
+            User user = userService.getUserByIdOrThrow(UUID.fromString(userId));
 
             return org.springframework.security.core.userdetails.User
                 .withUsername(userId)
@@ -54,26 +56,43 @@ public class AuthService implements UserDetailsService {
                 .filter(u -> passwordEncoder.matches(loginRequest.password(), u.getPassword()))
                 .orElseThrow(() -> new UnauthorizedException("Invalid username or password"));
 
-        user = userService.updateLastSessionTime(user);
+        userService.updateLastSessionTime(user);
 
         return generateAuthResponse(user);
     }
 
-    public AuthResponse completeOnboarding(Integer userId, UserOnboardingRequest request) {
+    //TODO: store valid refresh tokens in database table; replace with new refresh token on refresh
+    public AuthResponse refreshSession(AuthRefreshRequest refreshRequest) {
+        Claims claims = jwtService.parseToken(refreshRequest.refreshToken());
+
+        if (!"REFRESH".equals(claims.get("type"))) {
+            throw new UnauthorizedException("Invalid token type");
+        }
+
+        User user = userService.getUserByIdOrThrow(UUID.fromString(claims.getSubject()));
+
+        userService.updateLastSessionTime(user);
+
+        return generateAuthResponse(user);
+    }
+
+    public AuthResponse completeOnboarding(UUID userId, UserOnboardingRequest request) {
         User user = userService.processOnboarding(userId, request);
 
         return generateAuthResponse(user);
     }
 
     private AuthResponse generateAuthResponse(User user) {
-        String token = jwtService.generateToken(user.getId().toString(), user.isOnboardingComplete());
-        Claims claims = jwtService.parseToken(token);
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.isOnboardingComplete());
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), user.isOnboardingComplete());
+
+        Claims claims = jwtService.parseToken(accessToken);
         OffsetDateTime expirationTime = claims.getExpiration().toInstant().atOffset(ZoneOffset.UTC);
 
-        AuthResponse.Auth auth = new AuthResponse.Auth(token,
+        AuthResponse.Auth auth = new AuthResponse.Auth(accessToken,
                                                        "Bearer ",
                                                        expirationTime,
-                                                       "todo-refresh-token"); //TODO
+                                                       refreshToken);
         AuthResponse.User authUser = new AuthResponse.User(user.getId(),
                                                            user.isOnboardingComplete());
 

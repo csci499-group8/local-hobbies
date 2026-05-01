@@ -11,13 +11,13 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import io.github.csci499_group8.local_hobbies.backend.repository.GlobalHobbyRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyPhotoRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyRepository;
+import io.github.csci499_group8.local_hobbies.backend.repository.projections.HobbyPhotoProjection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,13 +34,13 @@ public class HobbyService {
     // --- methods called by HobbyController ---
 
     @Transactional(readOnly = true)
-    public List<HobbyResponse> getCurrentUserHobbies(Integer userId) {
+    public List<HobbyResponse> getHobbies(UUID userId) {
         return getHobbiesByUserId(userId);
     }
 
     @Transactional
-    public HobbyResponse addHobby(Integer userId, HobbyCreationRequest request) {
-        if (hobbyRepository.existsByUserIdAndHobbyName(userId, request.name())) {
+    public HobbyResponse addHobby(UUID userId, HobbyCreationRequest request) {
+        if (hobbyRepository.existsByUserIdAndName(userId, request.name())) {
             throw new IllegalStateException("Hobby already exists");
         }
 
@@ -49,7 +49,7 @@ public class HobbyService {
     }
 
     @Transactional
-    public HobbyResponse updateHobby(Integer userId, Integer hobbyId,
+    public HobbyResponse updateHobby(UUID userId, UUID hobbyId,
                                      HobbyUpdateRequest request) {
         Hobby hobby = findHobbyByUserIdAndId(userId, hobbyId);
 
@@ -57,11 +57,24 @@ public class HobbyService {
         return hobbyMapper.toResponse(hobbyRepository.save(hobby));
     }
 
+    /**
+     * Delete hobby and associated hobby photos
+     */
     @Transactional
-    public void deleteHobby(Integer userId, Integer hobbyId) {
+    public void deleteHobby(UUID userId, UUID hobbyId) {
         Hobby hobby = findHobbyByUserIdAndId(userId, hobbyId);
 
+        List<String> hobbyPhotoKeys = hobbyPhotoRepository.findAllByHobbyId(hobbyId).stream()
+                                                          .map(projection -> projection.getHobbyPhoto().getPhotoKey())
+                                                          .toList();
+
         hobbyRepository.delete(hobby);
+
+        try {
+            storageService.deleteObjects(hobbyPhotoKeys);
+        } catch (Exception e) {
+            log.error("Failed to delete hobby photos with hobby ID: {}", hobbyId, e);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +85,7 @@ public class HobbyService {
     }
 
     @Transactional(readOnly = true)
-    public UploadUrlResponse generatePresignedUploadUrl(Integer userId, Integer hobbyId,
+    public UploadUrlResponse generatePresignedUploadUrl(UUID userId, UUID hobbyId,
                                                         UploadUrlRequest request) {
         findHobbyByUserIdAndId(userId, hobbyId);
 
@@ -87,41 +100,58 @@ public class HobbyService {
     }
 
     @Transactional(readOnly = true)
-    public List<HobbyPhotoResponse> getCurrentUserHobbyPhotos(Integer userId) {
+    public List<HobbyPhotoResponse> getHobbyPhotos(UUID userId) {
         return getHobbyPhotosByUserId(userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<HobbyPhotoResponse> getHobbyPhotosByHobbyId(UUID hobbyId) {
+        return mapBatchPhotosToPhotoResponses(hobbyPhotoRepository.findAllByHobbyId(hobbyId));
+    }
+
     @Transactional
-    public HobbyPhotoResponse addHobbyPhoto(Integer userId, Integer hobbyId,
+    public HobbyPhotoResponse addHobbyPhoto(UUID userId, UUID hobbyId,
                                             HobbyPhotoCreationRequest request) {
-        findHobbyByUserIdAndId(userId, hobbyId);
+        //check that hobby exists and extract hobby name
+        HobbyName hobbyName = findHobbyByUserIdAndId(userId, hobbyId).getName();
 
         HobbyPhoto photo = hobbyMapper.toPhotoEntity(request, hobbyId);
-        return hobbyMapper.toPhotoResponse(hobbyPhotoRepository.save(photo));
+        photo = hobbyPhotoRepository.save(photo);
+
+        return hobbyMapper.toPhotoResponse(photo, hobbyName, getPhotoUrl(photo.getPhotoKey()));
     }
 
     @Transactional
-    public HobbyPhotoResponse updateHobbyPhoto(Integer userId, Integer photoId,
+    public HobbyPhotoResponse updateHobbyPhoto(UUID userId, UUID photoId,
                                                HobbyPhotoUpdateRequest request) {
         HobbyPhoto photo = findHobbyPhotoByUserIdAndId(userId, photoId);
+        HobbyName hobbyName = findHobbyByUserIdAndId(userId, photo.getHobbyId()).getName();
 
         hobbyMapper.updatePhotoEntity(request, photo);
-        return hobbyMapper.toPhotoResponse(hobbyPhotoRepository.save(photo));
+        photo = hobbyPhotoRepository.save(photo);
+
+        return hobbyMapper.toPhotoResponse(photo, hobbyName, getPhotoUrl(photo.getPhotoKey()));
     }
 
     @Transactional
-    public void deleteHobbyPhoto(Integer userId, Integer photoId) {
-        HobbyPhoto photo = findHobbyPhotoByUserIdAndId(userId, photoId);
+    public void deleteHobbyPhoto(UUID userId, UUID photoId) {
+        String photoKey = findHobbyPhotoByUserIdAndId(userId, photoId).getPhotoKey();
 
-        storageService.deleteObject(photo.getPhotoUrl());
-        hobbyPhotoRepository.delete(photo);
+        hobbyPhotoRepository.deleteById(photoId);
+
+        try {
+            storageService.deleteObjects(List.of(photoKey));
+        } catch (Exception e) { //log and rethrow
+            log.error("Failed to delete hobby photo with key: {}", photoKey, e);
+            throw e;
+        }
     }
 
     // --- methods called by services ---
 
     //returns empty list if user not found
     @Transactional(readOnly = true)
-    public List<HobbyResponse> getHobbiesByUserId(Integer userId) {
+    public List<HobbyResponse> getHobbiesByUserId(UUID userId) {
         return hobbyRepository.findAllByUserId(userId).stream()
                               .map(hobbyMapper::toResponse)
                               .toList();
@@ -129,20 +159,20 @@ public class HobbyService {
 
     //returns 0 if user not found
     @Transactional(readOnly = true)
-    public Integer getHobbyCount(Integer userId) {
+    public Integer getHobbyCount(UUID userId) {
         return hobbyRepository.countByUserId(userId);
     }
 
     @Transactional(readOnly = true)
-    public List<HobbyOverlapResponse> getOverlappingHobbies(Integer currentUserId,
-                                                            Integer otherUserId) {
+    public List<HobbyOverlapResponse> getOverlappingHobbies(UUID currentUserId,
+                                                            UUID otherUserId) {
         //other user's existence has been validated by userService caller
 
         return hobbyRepository.findOverlappingHobbies(currentUserId, otherUserId);
     }
 
     @Transactional
-    public void addOnboardingHobbies(Integer userId, List<HobbyCreationRequest> requests) {
+    public void addOnboardingHobbies(UUID userId, List<HobbyCreationRequest> requests) {
         //verify that hobbies are unique
         Set<HobbyName> uniqueHobbies = requests.stream()
                                                .map(HobbyCreationRequest::name)
@@ -160,10 +190,8 @@ public class HobbyService {
 
     //returns empty list if user not found
     @Transactional(readOnly = true)
-    public List<HobbyPhotoResponse> getHobbyPhotosByUserId(Integer userId) {
-        return hobbyPhotoRepository.findAllByUserId(userId).stream()
-                                   .map(hobbyMapper::toPhotoResponse)
-                                   .toList();
+    public List<HobbyPhotoResponse> getHobbyPhotosByUserId(UUID userId) {
+        return mapBatchPhotosToPhotoResponses(hobbyPhotoRepository.findAllByUserId(userId));
     }
 
     // --- private helper methods ---
@@ -173,7 +201,7 @@ public class HobbyService {
      * requests.
      * @throws ResourceNotFoundException if hobby does not exist or request is unauthorized
      */
-    protected Hobby findHobbyByUserIdAndId(Integer userId, Integer hobbyId) {
+    protected Hobby findHobbyByUserIdAndId(UUID userId, UUID hobbyId) {
         Hobby hobby = hobbyRepository.findById(hobbyId).orElseThrow(
                 () -> new ResourceNotFoundException("Hobby not found with ID: " + hobbyId)
         );
@@ -194,7 +222,7 @@ public class HobbyService {
      * @throws ResourceNotFoundException if hobby photo does not exist or request
      *         is unauthorized
      */
-    protected HobbyPhoto findHobbyPhotoByUserIdAndId(Integer userId, Integer photoId) {
+    protected HobbyPhoto findHobbyPhotoByUserIdAndId(UUID userId, UUID photoId) {
         HobbyPhoto photo = hobbyPhotoRepository.findById(photoId).orElseThrow(
                 () -> new ResourceNotFoundException("Hobby photo not found with ID: " + photoId)
         );
@@ -203,6 +231,28 @@ public class HobbyService {
         findHobbyByUserIdAndId(userId, photo.getHobbyId());
 
         return photo;
+    }
+
+    private String getPhotoUrl(String objectKey) {
+        if (objectKey == null) return null;
+
+        return storageService.createPresignedGetUrl(objectKey);
+    }
+
+    private List<HobbyPhotoResponse> mapBatchPhotosToPhotoResponses(List<HobbyPhotoProjection> photoProjections) {
+        List<String> keys = photoProjections.stream()
+                                            .map(projection -> projection.getHobbyPhoto().getPhotoKey())
+                                            .toList();
+
+        Map<String, String> keyToUrl = (!keys.isEmpty())
+                ? storageService.createBatchPresignedGetUrls(keys)
+                : Collections.emptyMap();
+
+        return photoProjections.stream()
+                               .map(projection -> hobbyMapper.toPhotoResponse(
+                                       projection,
+                                       keyToUrl.get(projection.getHobbyPhoto().getPhotoKey())
+                               )).toList();
     }
 
 }

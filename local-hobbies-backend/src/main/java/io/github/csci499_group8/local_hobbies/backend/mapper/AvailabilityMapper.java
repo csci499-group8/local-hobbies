@@ -13,6 +13,7 @@ import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.*;
+import java.util.UUID;
 
 @Mapper(componentModel = "spring",
         imports = {AvailabilityType.class},
@@ -29,20 +30,20 @@ public abstract class AvailabilityMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "location", source = "request.location") //automatically maps by calling LocationMapper method
-    public abstract OneTimeAvailability toEntity(OneTimeAvailabilityCreationRequest request, Integer userId);
+    public abstract OneTimeAvailability toEntity(OneTimeAvailabilityCreationRequest request, UUID userId);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "location", source = "request.location") //automatically maps by calling LocationMapper method
-    public abstract RecurringAvailability toEntity(RecurringAvailabilityCreationRequest request, Integer userId);
+    public abstract RecurringAvailability toEntity(RecurringAvailabilityCreationRequest request, UUID userId);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "overrideLocation", source = "request.overrideLocation") //automatically maps by calling LocationMapper method
-    public abstract AvailabilityException toEntity(AvailabilityExceptionCreationRequest request, Integer userId);
+    public abstract AvailabilityException toEntity(AvailabilityExceptionCreationRequest request, UUID userId);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "overrideLocation", source = "request.overrideLocation") //automatically maps by calling LocationMapper method
     public abstract AvailabilityException toEntity(AvailabilityExceptionOnboardingCreationRequest request,
-                                   Integer userId, Integer recurringAvailabilityId);
+                                   UUID userId, UUID recurringAvailabilityId);
 
     // --- updateEntity mappings ---
 

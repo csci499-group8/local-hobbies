@@ -36,7 +36,7 @@ paths:
       tags:
         - Auth
       summary: Create a new user account
-      description: Register a new user and receive JWT token with user information
+      description: Register a new user and receive JWTs with user information
       security: []
       requestBody:
         required: true
@@ -63,7 +63,7 @@ paths:
       tags:
         - Auth
       summary: Log into an existing account
-      description: Authenticate user and receive JWT token with user information
+      description: Authenticate user and receive JWTs with user information
       security: []
       requestBody:
         required: true
@@ -71,6 +71,31 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh session
+      description: Submit refresh token and receive new JWTs with user information
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRefreshRequest'
       responses:
         '200':
           description: Login successful
@@ -282,7 +307,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: Profile retrieved successfully
@@ -362,7 +388,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -392,7 +419,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Hobby deleted successfully
@@ -438,7 +466,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -495,7 +524,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -531,7 +561,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -561,7 +592,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Hobby photo deleted successfully
@@ -636,7 +668,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -666,7 +699,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: One-time availability deleted successfully
@@ -718,7 +752,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -748,7 +783,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Recurring availability deleted successfully
@@ -800,7 +836,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -830,7 +867,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Exception deleted successfully
@@ -937,7 +975,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -961,13 +1000,14 @@ paths:
     delete:
       tags:
         - Matches
-      summary: Delete a saved match
+      summary: Delete a saved match. The match will persists in the database
       parameters:
         - name: matchId
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Match deleted successfully
@@ -1014,7 +1054,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: Match restored successfully
@@ -1053,9 +1094,12 @@ components:
       properties:
         username:
           type: string
+          minLength: 3
+          maxLength: 40
           example: alice_smith
         password:
           type: string
+          minLength: 8
           example: ExamplePassword12#
         email:
           type: string
@@ -1074,6 +1118,14 @@ components:
           type: string
           example: ExamplePassword12#
 
+    AuthRefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
     AuthResponse:
       type: object
       required:
@@ -1084,7 +1136,7 @@ components:
         auth:
           type: object
           required:
-            - accesToken
+            - accessToken
             - tokenType
             - expirationTime
             - refreshToken
@@ -1110,8 +1162,8 @@ components:
             - onboardingComplete
           properties:
             id:
-              type: integer
-              example: 123
+              type: string
+              format: uuid
             onboardingComplete:
               type: boolean
               description: Boolean used to route to either homepage (true) or onboarding page (false)
@@ -1211,12 +1263,11 @@ components:
         publicContactInfo:
           type: string
           example: "@asmith123 on Instagram"
-        profilePhotoUrl:
+        profilePhotoKey:
           type: string
           description: Omitted if not changed or if update was attempted by user
             but photo upload failed. Null if being removed from account
           nullable: true
-          example: https://example.com/photos/123.jpg
         showAge:
           type: boolean
           example: true
@@ -1295,13 +1346,9 @@ components:
         user:
           type: object
           required:
-            - id
             - name
             - profilePhotoUrl
           properties:
-            id:
-              type: integer
-              example: 123
             name:
               type: string
               example: Alice Smith
@@ -1319,18 +1366,15 @@ components:
               example: 5
         availabilitySummary:
           type: object
-          required:
-            - nextAvailability
-          properties:
-            nextAvailability: #change to booked meetup once implemented
-              $ref: '#/components/schemas/OneTimeAvailabilityResponse'
+          description: not yet implemented
         matchSummary:
           type: object
           required:
-            - count
+            - inboundMatchCount
           properties:
-            count:
+            inboundMatchCount:
               type: integer
+              description: number of people who have saved the current user as a match
               example: 13
 
     CurrentUserProfileResponse:
@@ -1401,8 +1445,8 @@ components:
         - overlappingAvailabilities
       properties:
         id:
-          type: integer
-          example: 123
+          type: string
+          format: uuid
         name:
           type: string
           example: Alice Smith
@@ -1486,8 +1530,8 @@ components:
         - experienceLevel
       properties:
         id:
-          type: integer
-          example: 49
+          type: string
+          format: uuid
         name:
           type: string
           example: Hiking
@@ -1502,11 +1546,10 @@ components:
     HobbyPhotoCreationRequest:
       type: object
       required:
-        - photoUrl
+        - photoKey
       properties:
-        photoUrl:
+        photoKey:
           type: string
-          example: https://example.com/photos/123/hobby135.jpg
         caption:
           type: string
           nullable: true
@@ -1518,9 +1561,9 @@ components:
       description: Should contain only fields that are being updated
       properties:
         hobbyId:
-          type: integer
+          type: string
+          format: uuid
           description: Should be changed only if current value is incorrect
-          example: 49
         caption:
           type: string
           nullable: true
@@ -1531,15 +1574,19 @@ components:
       required:
         - id
         - hobbyId
+        - hobbyName
         - photoUrl
         - caption
       properties:
         id:
-          type: integer
-          example: 335
+          type: string
+          format: uuid
         hobbyId:
-          type: integer
-          example: 49
+          type: string
+          format: uuid
+        hobbyName:
+          type: string
+          example: Hiking
         photoUrl:
           type: string
           example: https://example.com/photos/123/hobby135.jpg
@@ -1565,10 +1612,21 @@ components:
       type: object
       required:
         - name
+        - currentUserExperienceLevel
+        - otherUserExperienceLevel
       properties:
         name:
           type: string
           example: Hiking
+        currentUserExperienceLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          example: Advanced
+        otherUserExperienceLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+          example: Intermediate
+
 
     # ==================== Availability Schemas ====================
     OneTimeAvailabilityCreationRequest:
@@ -1609,17 +1667,13 @@ components:
       type: object
       required:
         - id
-        - userId
         - location
         - start
         - duration
       properties:
         id:
-          type: integer
-          example: 41
-        userId:
-          type: integer
-          example: 123
+          type: string
+          format: uuid
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
         start:
@@ -1720,7 +1774,6 @@ components:
       type: object
       required:
         - id
-        - userId
         - location
         - ruleStart
         - ruleEnd
@@ -1731,11 +1784,8 @@ components:
         - duration
       properties:
         id:
-          type: integer
-          example: 41
-        userId:
-          type: integer
-          example: 123
+          type: string
+          format: uuid
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
         ruleStart:
@@ -1781,8 +1831,8 @@ components:
         - isCancelled
       properties:
         recurringAvailabilityId:
-          type: integer
-          example: 10
+          type: string
+          format: uuid
         exceptionDate:
           type: string
           format: date
@@ -1871,7 +1921,6 @@ components:
       type: object
       required:
         - id
-        - userId
         - recurringAvailabilityId
         - exceptionDate
         - exceptionReason
@@ -1881,14 +1930,11 @@ components:
         - overrideDuration
       properties:
         id:
-          type: integer
-          example: 529
-        userId:
-          type: integer
-          example: 123
+          type: string
+          format: uuid
         recurringAvailabilityId:
-          type: integer
-          example: 76
+          type: string
+          format: uuid
         exceptionDate:
           type: string
           format: date
@@ -1983,7 +2029,8 @@ components:
           type: string
           enum: [One-time availability, Recurring availability, Availability exception]
         sourceId:
-          type: integer
+          type: string
+          format: uuid
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
         start:
@@ -2020,7 +2067,7 @@ components:
           description: ISO 8601 UTC timestamp
           example: "2026-02-09T10:00:00Z"
 
-    # ==================== Match Schemas ====================
+    # ==================== Match Search and Saved Match Schemas ====================
     MatchedUser:
       type: object
       required:
@@ -2030,8 +2077,8 @@ components:
         - lastSessionTime
       properties:
         id:
-          type: integer
-          example: 123
+          type: string
+          format: uuid
         name:
           type: string
           example: Alice Smith
@@ -2160,14 +2207,10 @@ components:
       type: object
       required:
         - savedUserId
-        - hobby
       properties:
         savedUserId:
-          type: integer
-          example: 123
-        hobby:
           type: string
-          example: Hiking
+          format: uuid
         notes:
           type: string
           nullable: true
@@ -2186,23 +2229,20 @@ components:
       type: object
       required:
         - id
-        - userId
         - savedUser
-        - hobby
+        - overlappingHobbies
         - notes
         - creationTime
       properties:
         id:
-          type: integer
-          example: 5
-        userId:
-          type: integer
-          example: 80
+          type: string
+          format: uuid
         savedUser:
           $ref: '#/components/schemas/MatchedUser'
-        hobby:
-          type: string
-          example: Hiking
+        overlappingHobbies:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyOverlapResponse'
         notes:
           type: string
           nullable: true
@@ -2211,6 +2251,35 @@ components:
           type: string
           format: date-time
           description: ISO 8601 UTC timestamp
+          example: "2026-01-20T15:00:00Z"
+
+    MutualMatchResponse:
+      type: object
+      required:
+        - currentUserMatchId
+        - savedUser
+        - overlappingHobbies
+        - notes
+        - mutualMatchTime
+      properties:
+        currentUserMatchId:
+          type: string
+          format: uuid
+          description: ID of the current user's saved match
+        savedUser:
+          $ref: '#/components/schemas/MatchedUser'
+        overlappingHobbies:
+          type: array
+          items:
+            $ref: '#/components/schemas/HobbyOverlapResponse'
+        notes:
+          type: string
+          nullable: true
+          example: Brings her dog on hikes
+        mutualMatchTime:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp; time when match became mutual (i.e. when second match was made)
           example: "2026-01-20T15:00:00Z"
 
     # ==================== Location Schemas ====================
@@ -2251,11 +2320,11 @@ components:
     UploadUrlResponse:
       type: object
       required:
-        - fileId
+        - fileKey
         - uploadUrl
         - expirationTime
       properties:
-        fileId:
+        fileKey:
           type: string
           format: uuid
         uploadUrl:

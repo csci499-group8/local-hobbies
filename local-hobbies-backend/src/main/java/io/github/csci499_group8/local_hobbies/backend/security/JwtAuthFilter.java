@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -49,6 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             boolean isOnboardingExempt =
                 uri.equals("/api/auth/login")
                     || uri.equals("/api/auth/signup")
+                    || uri.equals("/api/auth/refresh")
                     || uri.equals("/api/users/onboarding")
                     || uri.equals("/api/hobbies/global")
                     || uri.equals("/error");
@@ -62,7 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             String userIdString = claims.getSubject();
 
-            request.setAttribute("userId", Integer.parseInt(userIdString));
+            request.setAttribute("userId", UUID.fromString(userIdString));
 
             //if request is not already authenticated
             if (SecurityContextHolder.getContext().getAuthentication() == null) {

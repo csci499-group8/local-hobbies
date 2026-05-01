@@ -40,18 +40,18 @@ public class AvailabilityService {
     private final AvailabilityMapper availabilityMapper;
     
     @Value("${application.availability.scheduling-window-days}")
-    private final int schedulingWindowDays;
+    private int schedulingWindowDays;
     @Value("${application.availability.overlap-window-days}")
-    private final int overlapWindowDays;
+    private int overlapWindowDays;
     @Value("${application.availability.max-duration-hours}")
-    private final int maxDurationHours;
+    private int maxDurationHours;
 
-    private record ExceptionKey(Integer sourceId, LocalDate date) {}
+    private record ExceptionKey(UUID sourceId, LocalDate date) {}
 
     // --- methods called by AvailabilityController ---
 
     @Transactional(readOnly = true)
-    public ScheduleResponse getSchedule(Integer userId) {
+    public ScheduleResponse getSchedule(UUID userId) {
         List<AvailabilityIntervalResponse> intervals =
             projectScheduleToIntervals(userId, LocalDate.now(), LocalDate.now().plusDays(schedulingWindowDays))
             .stream()
@@ -74,7 +74,7 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public OneTimeAvailabilityResponse createOneTime(Integer userId,
+    public OneTimeAvailabilityResponse createOneTime(UUID userId,
                                                      OneTimeAvailabilityCreationRequest request) {
         OneTimeAvailability availability = availabilityMapper.toEntity(request, userId);
 
@@ -84,7 +84,7 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public OneTimeAvailabilityResponse updateOneTime(Integer userId, Integer oneTimeId,
+    public OneTimeAvailabilityResponse updateOneTime(UUID userId, UUID oneTimeId,
                                                      OneTimeAvailabilityUpdateRequest request) {
         OneTimeAvailability availability = findAvailabilityByUserIdAndId(userId, oneTimeId, oneTimeRepository,
                                                                          AvailabilityType.ONE_TIME_AVAILABILITY);
@@ -97,12 +97,12 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public void deleteOneTime(Integer userId, Integer oneTimeId) {
+    public void deleteOneTime(UUID userId, UUID oneTimeId) {
         deleteAvailability(userId, oneTimeId, oneTimeRepository, AvailabilityType.ONE_TIME_AVAILABILITY);
     }
 
     @Transactional
-    public RecurringAvailabilityResponse createRecurring(Integer userId,
+    public RecurringAvailabilityResponse createRecurring(UUID userId,
                                                          RecurringAvailabilityCreationRequest request) {
         RecurringAvailability availability = availabilityMapper.toEntity(request, userId);
 
@@ -115,7 +115,7 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public RecurringAvailabilityResponse updateRecurring(Integer userId, Integer recurringId,
+    public RecurringAvailabilityResponse updateRecurring(UUID userId, UUID recurringId,
                                                          RecurringAvailabilityUpdateRequest request) {
         RecurringAvailability availability = findAvailabilityByUserIdAndId(userId, recurringId, recurringRepository,
                                                                            AvailabilityType.RECURRING_AVAILABILITY);
@@ -141,19 +141,21 @@ public class AvailabilityService {
         return availabilityMapper.toRecurringResponse(recurringRepository.save(availability));
     }
 
+    /**
+     * Delete recurring availability and associated availability exceptions
+     */
     @Transactional
-    public void deleteRecurring(Integer userId, Integer recurringId) {
+    public void deleteRecurring(UUID userId, UUID recurringId) {
         deleteAvailability(userId, recurringId, recurringRepository, AvailabilityType.RECURRING_AVAILABILITY);
-        //on delete, cascades to availability exceptions
     }
 
     @Transactional
-    public AvailabilityExceptionResponse createException(Integer userId,
+    public AvailabilityExceptionResponse createException(UUID userId,
                                                          AvailabilityExceptionCreationRequest request) {
         //ensure that exception date is a recurring date and that exception has not already been created for date
 
         LocalDate exceptionDate = request.exceptionDate();
-        Integer recurringId = request.recurringAvailabilityId();
+        UUID recurringId = request.recurringAvailabilityId();
 
         RecurringAvailability recurringAvailability = recurringRepository.findById(recurringId).orElseThrow(
             () -> new ResourceNotFoundException("Recurring availability not found with ID: " + recurringId)
@@ -177,14 +179,14 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public AvailabilityExceptionResponse updateException(Integer userId, Integer exceptionId,
+    public AvailabilityExceptionResponse updateException(UUID userId, UUID exceptionId,
                                                          AvailabilityExceptionUpdateRequest request) {
         AvailabilityException exception = findAvailabilityByUserIdAndId(userId, exceptionId, exceptionRepository,
                                                                         AvailabilityType.AVAILABILITY_EXCEPTION);
 
         availabilityMapper.updateEntity(request, exception);
 
-        Integer recurringId = exception.getRecurringAvailabilityId();
+        UUID recurringId = exception.getRecurringAvailabilityId();
         RecurringAvailability recurringAvailability = recurringRepository.findById(recurringId).orElseThrow(
                 () -> new ResourceNotFoundException("Recurring availability not found with ID: " + recurringId)
         );
@@ -195,7 +197,7 @@ public class AvailabilityService {
     }
 
     @Transactional
-    public void deleteException(Integer userId, Integer exceptionId) {
+    public void deleteException(UUID userId, UUID exceptionId) {
         deleteAvailability(userId, exceptionId, exceptionRepository, AvailabilityType.AVAILABILITY_EXCEPTION);
     }
 
@@ -203,13 +205,13 @@ public class AvailabilityService {
 
     //count only one-time and recurring because exceptions do not exist independently
     @Transactional(readOnly = true)
-    public Integer getAvailabilityCount(Integer userId) {
+    public Integer getAvailabilityCount(UUID userId) {
         return (oneTimeRepository.countByUserId(userId)
                 + recurringRepository.countByUserId(userId));
     }
 
     @Transactional
-    public void addOnboardingAvailabilities(Integer userId, AvailabilityOnboardingRequests requests) {
+    public void addOnboardingAvailabilities(UUID userId, AvailabilityOnboardingRequests requests) {
         verifyNoConflictsOnboarding(userId, requests);
 
         //save availabilities to database
@@ -223,7 +225,7 @@ public class AvailabilityService {
                 : requests.recurringsWithExceptions()) {
             RecurringAvailability recurring = availabilityMapper.toEntity(recWithExcRequest.recurring(), userId);
 
-            Integer recurringId = recurringRepository.save(recurring).getId();
+            UUID recurringId = recurringRepository.save(recurring).getId();
 
             List<AvailabilityException> exceptions = recWithExcRequest.exceptions().stream()
                       .map(req -> availabilityMapper.toEntity(req, userId, recurringId))
@@ -233,8 +235,8 @@ public class AvailabilityService {
     }
 
     @Transactional(readOnly = true)
-    public List<AvailabilityOverlapResponse> getOverlappingAvailabilities(Integer currentUserId,
-                                                                          Integer otherUserId) {
+    public List<AvailabilityOverlapResponse> getOverlappingAvailabilities(UUID currentUserId,
+                                                                          UUID otherUserId) {
         List<AvailabilityInterval> currentUserAvailabilities =
                 projectScheduleToIntervals(currentUserId, LocalDate.now(), LocalDate.now().plusDays(overlapWindowDays));
         List<AvailabilityInterval> otherUserAvailabilities =
@@ -278,9 +280,9 @@ public class AvailabilityService {
      * @throws ResourceNotFoundException if availability does not exist or request
      *         is unauthorized
      */
-    private <E extends UserOwned> E findAvailabilityByUserIdAndId(Integer userId,
-                                                                  Integer availabilityId,
-                                                                  JpaRepository<E, Integer> repository,
+    private <E extends UserOwned> E findAvailabilityByUserIdAndId(UUID userId,
+                                                                  UUID availabilityId,
+                                                                  JpaRepository<E, UUID> repository,
                                                                   AvailabilityType availabilityType) {
         E availability = repository.findById(availabilityId).orElseThrow(
                 () -> new ResourceNotFoundException(
@@ -297,9 +299,9 @@ public class AvailabilityService {
         return availability;
     }
 
-    private <E extends UserOwned> void deleteAvailability(Integer userId,
-                                                          Integer availabilityId,
-                                                          JpaRepository<E, Integer> repository,
+    private <E extends UserOwned> void deleteAvailability(UUID userId,
+                                                          UUID availabilityId,
+                                                          JpaRepository<E, UUID> repository,
                                                           AvailabilityType availabilityType) {
         E availability = findAvailabilityByUserIdAndId(userId, availabilityId, repository, availabilityType);
 
@@ -334,7 +336,7 @@ public class AvailabilityService {
      *                          RecurringAvailability, used to skip comparison
      *                          against the parent
      */
-    private void verifyNoConflicts(Integer userId, AvailabilityInterval newInterval, Integer parentRecurringId) {
+    private void verifyNoConflicts(UUID userId, AvailabilityInterval newInterval, UUID parentRecurringId) {
         //check for conflicts within range of availability max duration
         LocalDate windowStart = newInterval.start().minus(Duration.ofHours(maxDurationHours)).toLocalDate();
         LocalDate windowEnd = newInterval.end().plus(Duration.ofHours(maxDurationHours)).toLocalDate();
@@ -356,7 +358,7 @@ public class AvailabilityService {
      * Verify that a creation or update request for a OneTimeAvailability or a
      * RecurringAvailability does not conflict with the user's current schedule.
      */
-    private void verifyNoConflicts(Integer userId, AvailabilityInterval interval) {
+    private void verifyNoConflicts(UUID userId, AvailabilityInterval interval) {
         verifyNoConflicts(userId, interval, null);
     }
 
@@ -365,7 +367,7 @@ public class AvailabilityService {
      * @return list of all AvailabilityIntervals for a user's availabilities,
      *         sorted by start timestamp
      */
-    private List<AvailabilityInterval> projectScheduleToIntervals(Integer userId,
+    private List<AvailabilityInterval> projectScheduleToIntervals(UUID userId,
                                                                   LocalDate windowStart,
                                                                   LocalDate windowEnd) {
         Stream<AvailabilityInterval> oneTimeStream =
@@ -382,7 +384,7 @@ public class AvailabilityService {
      * Project a user's OneTimeAvailabilities to a list of AvailabilityIntervals.
      * @return list of AvailabilityIntervals for a user's RecurringAvailabilities
      */
-    private List<AvailabilityInterval> projectOneTimesToIntervals(Integer userId,
+    private List<AvailabilityInterval> projectOneTimesToIntervals(UUID userId,
                                                                   LocalDate windowStart,
                                                                   LocalDate windowEnd) {
         return oneTimeRepository.findAllByUserId(userId).stream()
@@ -402,7 +404,7 @@ public class AvailabilityService {
      * the user's AvailabilityExceptions.
      * @return list of AvailabilityIntervals for a user's RecurringAvailabilities
      */
-    private List<AvailabilityInterval> projectRecurringsToIntervals(Integer userId,
+    private List<AvailabilityInterval> projectRecurringsToIntervals(UUID userId,
                                                                     LocalDate windowStart,
                                                                     LocalDate windowEnd) {
         //map exceptions from (source availability ID, exception date) to (exception)
@@ -486,7 +488,7 @@ public class AvailabilityService {
         return occurrences;
     }
 
-    private void verifyNoConflictsOnboarding(Integer userId, AvailabilityOnboardingRequests requests) {
+    private void verifyNoConflictsOnboarding(UUID userId, AvailabilityOnboardingRequests requests) {
 
         //project requests to intervals
 

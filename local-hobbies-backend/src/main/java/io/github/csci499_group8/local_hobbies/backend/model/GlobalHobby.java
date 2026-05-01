@@ -16,6 +16,7 @@ public class GlobalHobby {
 
     @Id
     @Enumerated(EnumType.STRING)
+    @Column(name = "name", updatable = false, nullable = false)
     private HobbyName name;
 
     @Enumerated(EnumType.STRING)

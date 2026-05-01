@@ -18,6 +18,7 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
 import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,7 +29,9 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -43,9 +46,9 @@ public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Value("${application.user.onboarding.min-num-hobbies}")
-    private final int minNumHobbies;
+    private int minNumHobbies;
     @Value("${application.user.onboarding.min-num-availabilities}")
-    private final int minNumAvailabilities;
+    private int minNumAvailabilities;
 
     // --- methods called by AuthService ---
 
@@ -63,9 +66,9 @@ public class UserService {
     }
 
     @Transactional
-    public User updateLastSessionTime(User user) {
+    public void updateLastSessionTime(User user) {
         user.setLastSessionTime(OffsetDateTime.now());
-        return userRepository.save(user);
+        userRepository.save(user);
     }
 
     public Optional<User> findUserByUsername(String username) {
@@ -74,7 +77,7 @@ public class UserService {
 
     //TODO: prevent partial updates to hobbies and availabilities
     @Transactional
-    public User processOnboarding(Integer userId, UserOnboardingRequest request) {
+    public User processOnboarding(UUID userId, UserOnboardingRequest request) {
         User user = getUserByIdOrThrow(userId);
 
         String locationApproximate = null;
@@ -100,12 +103,14 @@ public class UserService {
     // --- methods called by UserController ---
 
     @Transactional(readOnly = true)
-    public UserResponse getCurrentUser(Integer userId) {
-        return userMapper.toResponse(getUserByIdOrThrow(userId));
+    public UserResponse getCurrentUser(UUID userId) {
+        User user = getUserByIdOrThrow(userId);
+
+        return userMapper.toResponse(user, getProfilePhotoUrl(user.getProfilePhotoKey()));
     }
 
     @Transactional(readOnly = true)
-    public List<UserOnboardingIncompleteSection> getIncompleteSections(Integer userId) {
+    public List<UserOnboardingIncompleteSection> getIncompleteSections(UUID userId) {
         User user = getUserByIdOrThrow(userId);
 
         List<UserOnboardingIncompleteSection> incompleteSections = new ArrayList<>();
@@ -160,7 +165,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateUser(Integer userId, UserUpdateRequest request) {
+    public UserResponse updateUser(UUID userId, UserUpdateRequest request) {
         User user = getUserByIdOrThrow(userId);
 
         String locationApproximate = null;
@@ -168,21 +173,38 @@ public class UserService {
             locationApproximate = getApproximateLocation(request.location().get());
         }
 
-        userMapper.updateEntity(request, locationApproximate, user);
+        try {
+            if (request.profilePhotoKey() != null) { //frontend has already uploaded new photo
+                storageService.deleteObjects(List.of(user.getProfilePhotoKey()));
+            }
+        } catch (Exception e) {
+            log.error("Failed to delete profile photo with key: {}", user.getProfilePhotoKey(), e);
+        }
 
-        return userMapper.toResponse(userRepository.save(user));
+        userMapper.updateEntity(request, locationApproximate, user);
+        user = userRepository.save(user);
+
+        return userMapper.toResponse(user, getProfilePhotoUrl(user.getProfilePhotoKey()));
     }
 
     /**
      * Delete user and user's hobbies, hobby photos, availabilities, and matches
      */
     @Transactional
-    public void deleteUser(Integer userId) {
+    public void deleteUser(UUID userId) {
+        String profilePhotoKey = getUserByIdOrThrow(userId).getProfilePhotoKey();
+
         userRepository.deleteById(userId);
+
+        try {
+            storageService.deleteObjects(List.of(profilePhotoKey));
+        } catch (Exception e) {
+            log.error("Failed to delete profile photo with key: {}", profilePhotoKey, e);
+        }
     }
 
     @Transactional(readOnly = true)
-    public UploadUrlResponse generatePresignedUploadUrl(Integer userId, UploadUrlRequest request) {
+    public UploadUrlResponse generatePresignedUploadUrl(UUID userId, UploadUrlRequest request) {
         //key = file path/ID
         String objectKey = "users/" + userId + "/profile-photo";
 
@@ -193,15 +215,14 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserHomepageResponse getHomepage(Integer userId) {
+    public UserHomepageResponse getHomepage(UUID userId) {
         User user = getUserByIdOrThrow(userId);
 
-        UserSummary userSummary = new UserSummary(user.getId(),
-                                                  user.getName(),
-                                                  user.getProfilePhotoUrl());
+        UserSummary userSummary = new UserSummary(user.getName(),
+                                                  getProfilePhotoUrl(user.getProfilePhotoKey()));
         HobbySummary hobbySummary = new HobbySummary(hobbyService.getHobbyCount(userId));
         MatchSummary matchSummary =
-            new MatchSummary(savedMatchRepository.countByUserIdAndStatus(userId, MatchStatus.ACTIVE));
+            new MatchSummary(savedMatchRepository.countBySavedUserIdAndStatus(userId, MatchStatus.ACTIVE));
 
         return new UserHomepageResponse(userSummary,
                                         hobbySummary,
@@ -210,17 +231,19 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public CurrentUserProfileResponse getCurrentUserProfile(Integer userId) {
+    public CurrentUserProfileResponse getCurrentUserProfile(UUID userId) {
         User user = getUserByIdOrThrow(userId);
+        String profilePhotoUrl = getProfilePhotoUrl(user.getProfilePhotoKey());
         List<HobbyResponse> hobbies = hobbyService.getHobbiesByUserId(userId);
         List<HobbyPhotoResponse> hobbyPhotos = hobbyService.getHobbyPhotosByUserId(userId);
 
-        return userMapper.toCurrentProfileResponse(user, hobbies, hobbyPhotos);
+        return userMapper.toCurrentProfileResponse(user, profilePhotoUrl, hobbies, hobbyPhotos);
     }
 
     @Transactional(readOnly = true)
-    public OtherUserProfileResponse getOtherUserProfile(Integer currentUserId, Integer otherUserId) {
+    public OtherUserProfileResponse getOtherUserProfile(UUID currentUserId, UUID otherUserId) {
         User otherUser = getUserByIdOrThrow(otherUserId);
+        String otherUserProfilePhotoUrl = getProfilePhotoUrl(otherUser.getProfilePhotoKey());
 
         List<HobbyResponse> otherUserHobbies = hobbyService.getHobbiesByUserId(otherUserId);
         List<HobbyPhotoResponse> otherUserHobbyPhotos = hobbyService.getHobbyPhotosByUserId(otherUserId);
@@ -233,14 +256,15 @@ public class UserService {
         List<AvailabilityOverlapResponse> overlappingAvailabilities =
             availabilityService.getOverlappingAvailabilities(currentUserId, otherUserId);
 
-        return userMapper.toOtherProfileResponse(otherUser, otherUserHobbies, otherUserHobbyPhotos,
-                                                 isSavedMatch, overlappingHobbies, overlappingAvailabilities);
+        return userMapper.toOtherProfileResponse(otherUser, otherUserProfilePhotoUrl, otherUserHobbies,
+                                                 otherUserHobbyPhotos, isSavedMatch, overlappingHobbies,
+                                                 overlappingAvailabilities);
     }
 
     // --- methods called by services ---
 
     @Transactional(readOnly = true)
-    public User getUserByIdOrThrow(Integer userId) {
+    public User getUserByIdOrThrow(UUID userId) {
         return userRepository.findById(userId).orElseThrow(
                 () -> new ResourceNotFoundException("User not found with ID: " + userId)
         );
@@ -257,7 +281,7 @@ public class UserService {
     // --- private helper methods ---
 
     private boolean checkOnboardingCompletion(User user) {
-        Integer userId = user.getId();
+        UUID userId = user.getId();
         Integer hobbyCount = hobbyService.getHobbyCount(userId);
         Integer availabilityCount = availabilityService.getAvailabilityCount(userId);
 
@@ -274,6 +298,12 @@ public class UserService {
 
     private String getApproximateLocation(GeoJsonPoint locationPoint) {
         return locationService.getCityFromGeoJsonPoint(locationPoint);
+    }
+
+    private String getProfilePhotoUrl(String objectKey) {
+        if (objectKey == null) return null;
+
+        return storageService.createPresignedGetUrl(objectKey);
     }
 
 }

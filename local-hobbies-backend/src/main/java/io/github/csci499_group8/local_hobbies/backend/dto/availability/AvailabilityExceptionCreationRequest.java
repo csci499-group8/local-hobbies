@@ -8,9 +8,10 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Duration;
+import java.util.UUID;
 
 public record AvailabilityExceptionCreationRequest(
-    @NotNull Integer recurringAvailabilityId,
+    @NotNull UUID recurringAvailabilityId,
     @NotNull @WithinDays LocalDate exceptionDate,
     String exceptionReason, //may be omitted or null
     @NotNull boolean isCancelled,

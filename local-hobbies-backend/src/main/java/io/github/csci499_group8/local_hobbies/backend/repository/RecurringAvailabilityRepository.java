@@ -5,14 +5,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface RecurringAvailabilityRepository extends JpaRepository<RecurringAvailability, Integer> {
+public interface RecurringAvailabilityRepository extends JpaRepository<RecurringAvailability, UUID> {
 
-//    Optional<RecurringAvailability> findById(Integer id);
+//    Optional<RecurringAvailability> findById(UUID id);
 
-    Integer countByUserId(Integer userId);
+    Integer countByUserId(UUID userId);
 
-    List<RecurringAvailability> findAllByUserId(Integer userId);
+    List<RecurringAvailability> findAllByUserId(UUID userId);
 
 }

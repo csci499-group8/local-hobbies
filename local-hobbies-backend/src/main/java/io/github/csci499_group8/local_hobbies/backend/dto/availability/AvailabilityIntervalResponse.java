@@ -5,10 +5,11 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.AvailabilityTy
 import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public record AvailabilityIntervalResponse(
     @NotNull AvailabilityType sourceType,
-    @NotNull Integer sourceId,
+    @NotNull UUID sourceId,
     @NotNull GeoJsonPoint location,
     @NotNull OffsetDateTime start,
     @NotNull OffsetDateTime end

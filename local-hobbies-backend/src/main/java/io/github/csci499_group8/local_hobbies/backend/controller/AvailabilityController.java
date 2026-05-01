@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/availabilities")
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class AvailabilityController {
 
     @GetMapping
     public ResponseEntity<ScheduleResponse> getSchedule(
-            @RequestAttribute("userId") Integer userId) {
+            @RequestAttribute("userId") UUID userId) {
         return ResponseEntity.ok(availabilityService.getSchedule(userId));
     }
 
@@ -27,7 +29,7 @@ public class AvailabilityController {
 
     @PostMapping("/one-times")
     public ResponseEntity<OneTimeAvailabilityResponse> addOneTimeAvailability(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody OneTimeAvailabilityCreationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                              .body(availabilityService.createOneTime(userId, request));
@@ -35,16 +37,16 @@ public class AvailabilityController {
 
     @PutMapping("/one-times/{oneTimeId}")
     public ResponseEntity<OneTimeAvailabilityResponse> updateOneTimeAvailability(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable Integer oneTimeId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID oneTimeId,
             @Valid @RequestBody OneTimeAvailabilityUpdateRequest request) {
         return ResponseEntity.ok(availabilityService.updateOneTime(userId, oneTimeId, request));
     }
 
     @DeleteMapping("/one-times/{oneTimeId}")
     public ResponseEntity<Void> deleteOneTimeAvailability(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable Integer oneTimeId) {
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID oneTimeId) {
         availabilityService.deleteOneTime(userId, oneTimeId);
         return ResponseEntity.noContent().build();
     }
@@ -53,7 +55,7 @@ public class AvailabilityController {
 
     @PostMapping("/recurrings")
     public ResponseEntity<RecurringAvailabilityResponse> addRecurringAvailability(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody RecurringAvailabilityCreationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                              .body(availabilityService.createRecurring(userId, request));
@@ -61,16 +63,16 @@ public class AvailabilityController {
 
     @PutMapping("/recurrings/{recurringId}")
     public ResponseEntity<RecurringAvailabilityResponse> updateRecurringAvailability(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable Integer recurringId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID recurringId,
             @Valid @RequestBody RecurringAvailabilityUpdateRequest request) {
         return ResponseEntity.ok(availabilityService.updateRecurring(userId, recurringId, request));
     }
 
     @DeleteMapping("/recurrings/{recurringId}")
     public ResponseEntity<Void> deleteRecurringAvailability(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable Integer recurringId) {
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID recurringId) {
         availabilityService.deleteRecurring(userId, recurringId);
         return ResponseEntity.noContent().build();
     }
@@ -79,7 +81,7 @@ public class AvailabilityController {
 
     @PostMapping("/exceptions")
     public ResponseEntity<AvailabilityExceptionResponse> addException(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody AvailabilityExceptionCreationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                              .body(availabilityService.createException(userId, request));
@@ -87,16 +89,16 @@ public class AvailabilityController {
 
     @PutMapping("/exceptions/{exceptionId}")
     public ResponseEntity<AvailabilityExceptionResponse> updateException(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable Integer exceptionId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID exceptionId,
             @Valid @RequestBody AvailabilityExceptionUpdateRequest request) {
         return ResponseEntity.ok(availabilityService.updateException(userId, exceptionId, request));
     }
 
     @DeleteMapping("/exceptions/{exceptionId}")
     public ResponseEntity<Void> deleteException(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable Integer exceptionId) {
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID exceptionId) {
         availabilityService.deleteException(userId, exceptionId);
         return ResponseEntity.noContent().build();
     }

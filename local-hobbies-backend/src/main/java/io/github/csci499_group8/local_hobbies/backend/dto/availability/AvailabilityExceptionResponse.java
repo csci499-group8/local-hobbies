@@ -6,11 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Duration;
+import java.util.UUID;
 
 public record AvailabilityExceptionResponse(
-        @NotNull Integer id,
-        @NotNull Integer userId,
-        @NotNull Integer recurringAvailabilityId,
+        @NotNull UUID id,
+        @NotNull UUID recurringAvailabilityId,
         @NotNull LocalDate exceptionDate,
         @NotNull String exceptionReason,
         @NotNull boolean isCancelled,

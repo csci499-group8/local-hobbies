@@ -1,6 +1,7 @@
 package io.github.csci499_group8.local_hobbies.backend.controller;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthLoginRequest;
+import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthRefreshRequest;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthResponse;
 import io.github.csci499_group8.local_hobbies.backend.dto.auth.AuthSignupRequest;
 import io.github.csci499_group8.local_hobbies.backend.service.AuthService;
@@ -28,4 +29,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody AuthLoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshSession(@RequestBody AuthRefreshRequest refreshRequest) {
+        return ResponseEntity.ok(authService.refreshSession(refreshRequest));
+    }
+
 }
