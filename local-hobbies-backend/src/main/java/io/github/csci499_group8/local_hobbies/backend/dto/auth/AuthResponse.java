@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Response for successful signup, login, and onboarding
@@ -27,7 +28,7 @@ public record AuthResponse(
      * Minimal user info for routing/state management
      */
     public record User(
-        @NotNull Integer id,
+        @NotNull UUID id,
         @NotNull boolean onboardingComplete
     ) {}
 }

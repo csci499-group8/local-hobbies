@@ -5,10 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import org.locationtech.jts.geom.Point;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public record AvailabilityInterval(
     @NotNull AvailabilityType sourceType,
-    @NotNull Integer sourceId,
+    @NotNull UUID sourceId,
     @NotNull Point location,
     @NotNull OffsetDateTime start,
     @NotNull OffsetDateTime end

@@ -9,6 +9,7 @@ import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "recurring_availability")
@@ -20,11 +21,12 @@ import java.time.*;
 public class RecurringAvailability implements UserOwned {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private UUID userId;
 
     @Column(nullable = false, columnDefinition = "geography(Point, 4326)")
     private Point location;

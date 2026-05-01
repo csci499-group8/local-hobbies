@@ -11,10 +11,10 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 
 public record RecurringAvailabilityResponse (
-    @NotNull Integer id,
-    @NotNull Integer userId,
+    @NotNull UUID id,
     @Valid @NotNull GeoJsonPoint location,
     @NotNull LocalDate ruleStart,
     LocalDate ruleEnd, //null if rule continues indefinitely

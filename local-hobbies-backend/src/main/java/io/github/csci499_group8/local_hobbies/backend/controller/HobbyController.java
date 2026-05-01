@@ -5,7 +5,6 @@ import io.github.csci499_group8.local_hobbies.backend.dto.common.UploadUrlRespon
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.*;
 import io.github.csci499_group8.local_hobbies.backend.service.HobbyService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/hobbies")
@@ -25,14 +25,14 @@ public class HobbyController {
     // --- user hobbies ---
 
     @GetMapping
-    public ResponseEntity<List<HobbyResponse>> getCurrentUserHobbies(
-            @RequestAttribute("userId") Integer userId) {
-        return ResponseEntity.ok(hobbyService.getCurrentUserHobbies(userId));
+    public ResponseEntity<List<HobbyResponse>> getHobbies(
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(hobbyService.getHobbies(userId));
     }
 
     @PostMapping
     public ResponseEntity<HobbyResponse> addHobby(
-            @RequestAttribute("userId") Integer userId,
+            @RequestAttribute("userId") UUID userId,
             @Valid @RequestBody HobbyCreationRequest request) {
         HobbyResponse response = hobbyService.addHobby(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -40,16 +40,16 @@ public class HobbyController {
 
     @PutMapping("/{hobbyId}")
     public ResponseEntity<HobbyResponse> updateHobby(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable @Positive Integer hobbyId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID hobbyId,
             @Valid @RequestBody HobbyUpdateRequest request) {
         return ResponseEntity.ok(hobbyService.updateHobby(userId, hobbyId, request));
     }
 
     @DeleteMapping("/{hobbyId}")
     public ResponseEntity<Void> deleteHobby(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable @Positive Integer hobbyId) {
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID hobbyId) {
         hobbyService.deleteHobby(userId, hobbyId);
         return ResponseEntity.noContent().build();
     }
@@ -65,22 +65,29 @@ public class HobbyController {
 
     @PostMapping("/{hobbyId}/photos/upload-url")
     public ResponseEntity<UploadUrlResponse> getHobbyPhotoUploadUrl(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable @Positive Integer hobbyId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID hobbyId,
             @Valid @RequestBody UploadUrlRequest request) {
         return ResponseEntity.ok(hobbyService.generatePresignedUploadUrl(userId, hobbyId, request));
     }
 
     @GetMapping("/photos")
-    public ResponseEntity<List<HobbyPhotoResponse>> getCurrentUserHobbyPhotos(
-            @RequestAttribute("userId") Integer userId) {
-        return ResponseEntity.ok(hobbyService.getCurrentUserHobbyPhotos(userId));
+    public ResponseEntity<List<HobbyPhotoResponse>> getHobbyPhotos(
+            @RequestAttribute("userId") UUID userId) {
+        return ResponseEntity.ok(hobbyService.getHobbyPhotos(userId));
     }
 
-    @PostMapping("/photos")
+    //TODO: restrict by userId? if a user should only be able to call this on their own hobby photos
+    @GetMapping("/{hobbyId}/photos")
+    public ResponseEntity<List<HobbyPhotoResponse>> getHobbyPhotosByHobbyId(
+            @PathVariable UUID hobbyId) {
+        return ResponseEntity.ok(hobbyService.getHobbyPhotosByHobbyId(hobbyId));
+    }
+
+    @PostMapping("/{hobbyId}/photos")
     public ResponseEntity<HobbyPhotoResponse> addHobbyPhoto(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable @Positive Integer hobbyId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID hobbyId,
             @Valid @RequestBody HobbyPhotoCreationRequest request) {
         HobbyPhotoResponse response = hobbyService.addHobbyPhoto(userId, hobbyId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -88,16 +95,16 @@ public class HobbyController {
 
     @PutMapping("/photos/{photoId}")
     public ResponseEntity<HobbyPhotoResponse> updateHobbyPhoto(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable @Positive Integer photoId,
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID photoId,
             @Valid @RequestBody HobbyPhotoUpdateRequest request) {
         return ResponseEntity.ok(hobbyService.updateHobbyPhoto(userId, photoId, request));
     }
 
     @DeleteMapping("/photos/{photoId}")
     public ResponseEntity<Void> deleteHobbyPhoto(
-            @RequestAttribute("userId") Integer userId,
-            @PathVariable @Positive Integer photoId) {
+            @RequestAttribute("userId") UUID userId,
+            @PathVariable UUID photoId) {
         hobbyService.deleteHobbyPhoto(userId, photoId);
         return ResponseEntity.noContent().build();
     }

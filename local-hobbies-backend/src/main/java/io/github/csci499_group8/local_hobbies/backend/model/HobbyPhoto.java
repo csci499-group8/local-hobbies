@@ -3,6 +3,8 @@ package io.github.csci499_group8.local_hobbies.backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "hobby_photo")
 @Getter
@@ -13,14 +15,15 @@ import lombok.*;
 public class HobbyPhoto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @Column(name = "hobby_id", nullable = false)
-    private Integer hobbyId;
+    private UUID hobbyId;
 
-    @Column(name = "photo_url", nullable = false, columnDefinition = "TEXT")
-    private String photoUrl;
+    @Column(name = "photo_key", nullable = false, columnDefinition = "TEXT")
+    private String photoKey;
 
     @Column(columnDefinition = "TEXT")
     private String caption;

@@ -8,10 +8,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record SavedMatchResponse (
-    @NotNull UUID id,
+public record MutualMatchResponse(
+    @NotNull UUID currentUserMatchId,
     @Valid @NotNull MatchedUser savedUser,
     @NotNull List<HobbyOverlapResponse> overlappingHobbies,
     String notes, //nullable
-    @NotNull OffsetDateTime creationTime
+    @NotNull OffsetDateTime mutualMatchTime
 ) {}

@@ -19,7 +19,7 @@ public record UserUpdateRequest(
     JsonNullable<String> bio, //nullable
     @NotNullIfPresent @Valid JsonNullable<GeoJsonPoint> location,
     @NotNullIfPresent JsonNullable<String> publicContactInfo,
-    JsonNullable<String> profilePhotoUrl, //nullable
+    JsonNullable<String> profilePhotoKey, //nullable
     @NotNullIfPresent JsonNullable<UserGenderMatched> genderMatched,
     @NotNullIfPresent JsonNullable<Boolean> showAge,
     @NotNullIfPresent JsonNullable<Boolean> showGenderDisplayed

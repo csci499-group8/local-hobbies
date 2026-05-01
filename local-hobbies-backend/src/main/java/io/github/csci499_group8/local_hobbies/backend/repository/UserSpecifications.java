@@ -10,10 +10,11 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class UserSpecifications {
 
-    public static Specification<User> buildHardFilterSpecification(MatchSearchRequest request, Integer userId) {
+    public static Specification<User> buildHardFilterSpecification(MatchSearchRequest request, UUID userId) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             List<MatchSearchRequest.MatchSearchFilter> filters = request.filters();
@@ -30,7 +31,7 @@ public class UserSpecifications {
             //TODO: if codebase gets refactored to use JPA's ORM, change above line's equal() arguments
 
             //apply repository-level global filters (excludes radius and overlap, which are service-level)
-            predicates.add(criteriaBuilder.equal(hobbyRoot.get("hobbyName"), request.hobby()));
+            predicates.add(criteriaBuilder.equal(hobbyRoot.get("name"), request.hobby()));
 
             //calculate age from birthDate
             Expression<Integer> age = criteriaBuilder.function(

@@ -10,6 +10,7 @@ import org.locationtech.jts.geom.Point;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "availability_exception", uniqueConstraints = {
@@ -23,14 +24,15 @@ import java.time.LocalTime;
 public class AvailabilityException implements UserOwned {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private UUID userId;
 
     @Column(name = "recurring_availability_id", nullable = false)
-    private Integer recurringAvailabilityId;
+    private UUID recurringAvailabilityId;
 
     @Column(name = "exception_date", nullable = false)
     private LocalDate exceptionDate;

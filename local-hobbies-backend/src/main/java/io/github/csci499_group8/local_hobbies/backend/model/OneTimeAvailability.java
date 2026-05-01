@@ -9,6 +9,7 @@ import org.locationtech.jts.geom.Point;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "one_time_availability", uniqueConstraints = {
@@ -22,12 +23,13 @@ import java.time.OffsetDateTime;
 public class OneTimeAvailability implements UserOwned {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @Getter
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private UUID userId;
 
     @Column(nullable = false, columnDefinition = "geography(Point, 4326)")
     private Point location;

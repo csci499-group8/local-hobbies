@@ -28,10 +28,11 @@ public class SecurityConfig {
                                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/login", //allow login
-                    "/api/auth/signup", //allow registration
-                    "/api/hobbies/global", //allow retrieval of global hobbies
-                    "/error") //allow error messages
+                    "/api/auth/login",
+                    "/api/auth/signup",
+                    "/api/auth/refresh",
+                    "/api/hobbies/global",
+                    "/error")
                 .permitAll()
                 .anyRequest().authenticated()) //require authentication for everything else
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

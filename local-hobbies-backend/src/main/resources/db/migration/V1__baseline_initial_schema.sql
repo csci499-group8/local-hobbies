@@ -1,7 +1,8 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgcrypto; --necessary if entries are added manually to the database
 
 CREATE TABLE users (
-    id                    SERIAL PRIMARY KEY,
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username              VARCHAR(40)            UNIQUE NOT NULL,
     password              TEXT                   NOT NULL,
     email                 VARCHAR(254)           UNIQUE NOT NULL,
@@ -15,7 +16,7 @@ CREATE TABLE users (
     location_point        GEOGRAPHY(POINT, 4326),
     location_approximate  TEXT,
 	public_contact_info	  TEXT,
-	profile_photo_url	  TEXT,
+	profile_photo_key	  TEXT,
     gender_matched        TEXT CHECK (gender_matched IN ('MAN',
                                                          'NONBINARY',
                                                          'WOMAN')),
@@ -118,29 +119,29 @@ INSERT INTO global_hobby (name, category) VALUES
 ;
 
 CREATE TABLE hobby (
-    id               SERIAL PRIMARY KEY,
-    user_id          INT  NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    hobby_name       TEXT NOT NULL REFERENCES global_hobby (name),
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id          UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    name             TEXT NOT NULL REFERENCES global_hobby (name),
     experience_level TEXT NOT NULL CHECK (experience_level IN ('BEGINNER',
                                                                'INTERMEDIATE',
                                                                'ADVANCED')),
-    UNIQUE (user_id, hobby_name)
+    UNIQUE (user_id, name)
 );
-CREATE INDEX idx_hobby_hobby_name ON hobby (hobby_name);
+CREATE INDEX idx_hobby_name ON hobby (name);
 CREATE INDEX idx_hobby_user ON hobby (user_id);
 
 CREATE TABLE hobby_photo (
-	id			SERIAL PRIMARY KEY,
-    hobby_id    INT  NOT NULL REFERENCES hobby(id) ON DELETE CASCADE,
-	photo_url	TEXT NOT NULL,
+	id			UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hobby_id    UUID NOT NULL REFERENCES hobby(id) ON DELETE CASCADE,
+	photo_key	TEXT NOT NULL,
 	caption		TEXT
 );
 
 
 
 CREATE TABLE one_time_availability (
-    id         SERIAL PRIMARY KEY,
-    user_id    INT                    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID                   NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 
     location   GEOGRAPHY(POINT, 4326) NOT NULL,
 
@@ -155,12 +156,12 @@ CREATE INDEX idx_availability_date ON one_time_availability (start); --to find o
 COMMENT ON TABLE one_time_availability IS 'Overlapping active periods handled in application instead of by uniqueness constraints';
 
 CREATE TABLE recurring_availability (
-    id                 SERIAL PRIMARY KEY,
-    user_id            INT                    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id            UUID                   NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 
     location           GEOGRAPHY(POINT, 4326) NOT NULL,
 
-    rule_start         DATE                   NOT NULL DEFAULT CURRENT_DATE,
+    rule_start         DATE                   NOT NULL,
     rule_end           DATE,
     frequency          TEXT                   NOT NULL CHECK (frequency IN ('WEEKLY',
                                                                             'EVERY_TWO_WEEKS',
@@ -193,9 +194,9 @@ COMMENT ON COLUMN recurring_availability.rule_end IS 'Nullable (may be active in
 COMMENT ON COLUMN recurring_availability.time_zone_id IS 'IANA time zone ID';
 
 CREATE TABLE availability_exception (
-    id                  		SERIAL PRIMARY KEY,
-    user_id                     INT                     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    recurring_availability_id   INT						NOT NULL REFERENCES recurring_availability (id) ON DELETE CASCADE,
+    id                  		UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id                     UUID                    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    recurring_availability_id   UUID					NOT NULL REFERENCES recurring_availability (id) ON DELETE CASCADE,
     exception_date      		DATE					NOT NULL,
 	exception_reason			TEXT,
 
@@ -217,16 +218,16 @@ CREATE TABLE availability_exception (
 
 
 CREATE TABLE saved_match (
-    id            SERIAL PRIMARY KEY,
-    user_id       INT           NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    saved_user_id INT           NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id       UUID          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    saved_user_id UUID          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 	status		  TEXT          NOT NULL CHECK (status IN ('ACTIVE',
                                                            'DELETED')),
-    hobby_name    TEXT          NOT NULL REFERENCES global_hobby (name),
     notes         TEXT,
     creation_time TIMESTAMPTZ   NOT NULL,
     CHECK (user_id <> saved_user_id),
-    UNIQUE (user_id, saved_user_id, hobby_name)
+    UNIQUE (user_id, saved_user_id)
 );
-CREATE INDEX idx_saved_match_user_hobby ON saved_match (user_id, hobby_name);
+CREATE INDEX idx_saved_match_user_status_saved_user ON saved_match (user_id, status, saved_user_id);
+CREATE INDEX idx_saved_match_saved_user_status_user ON saved_match (saved_user_id, status, user_id);
 COMMENT ON COLUMN saved_match.status IS 'Used to restore recently deleted matches or to permanently delete matches after some time period';

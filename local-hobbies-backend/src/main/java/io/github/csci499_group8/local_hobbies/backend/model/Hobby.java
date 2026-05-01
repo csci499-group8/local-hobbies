@@ -5,6 +5,8 @@ import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "hobby", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "hobby_name"})
@@ -17,8 +19,9 @@ import lombok.*;
 public class Hobby {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
     //ORM:
 //    @ManyToOne(fetch = FetchType.LAZY)
@@ -26,11 +29,11 @@ public class Hobby {
 //    private User user;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private UUID userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "hobby_name", nullable = false)
-    private HobbyName hobbyName;
+    @Column(name = "name", nullable = false)
+    private HobbyName name;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "experience_level", nullable = false)
