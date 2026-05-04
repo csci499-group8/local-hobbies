@@ -80,6 +80,8 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
           $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -1000,7 +1002,7 @@ paths:
     delete:
       tags:
         - Matches
-      summary: Delete a saved match. The match will persists in the database
+      summary: Delete a saved match. The match persists in the database for 30 days before behind permanently deleted.
       parameters:
         - name: matchId
           in: path
@@ -2362,42 +2364,42 @@ components:
   responses:
     # ==================== Error Responses ====================
     BadRequestError: #400
-      description: "The request was invalid or cannot be served."
+      description: Error such as "The request was invalid or cannot be served."
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/GlobalError'
 
     UnauthorizedError: #401
-      description: "Authentication is required or has failed."
+      description: Error such as "Authentication is required or has failed."
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/GlobalError'
 
     ForbiddenError: #403
-      description: "The request could not be completed due to insufficient permissions to access the resource."
+      description: Error such as "The request could not be completed due to insufficient permissions to access the resource."
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/GlobalError'
 
     NotFoundError: #404
-      description: "The requested resource could not be found."
+      description: Error such as "The requested resource could not be found."
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/GlobalError'
 
     ConflictError: #409
-      description: "The request could not be completed due to a conflict with the current state of the resource."
+      description: Error such as "The request could not be completed due to a conflict with the current state of the resource."
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/GlobalError'
 
     InternalServerError: #500
-      description: "An unexpected error occurred on the server."
+      description: Error such as "An unexpected error occurred on the server."
       content:
         application/json:
           schema:

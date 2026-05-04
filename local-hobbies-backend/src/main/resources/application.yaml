@@ -19,6 +19,9 @@ spring:
     mapper:
       accept-case-insensitive-enums: true #for java.time.DayOfWeek
 
+server:
+  port: ${PORT:8080}
+
 application:
   security:
     jwt:

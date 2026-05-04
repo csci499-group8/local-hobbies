@@ -52,6 +52,7 @@ public class UserService {
 
     // --- methods called by AuthService ---
 
+    //TODO: validate email?
     @Transactional
     public User createUser(AuthSignupRequest request) {
         if (userRepository.existsByUsername(request.username())

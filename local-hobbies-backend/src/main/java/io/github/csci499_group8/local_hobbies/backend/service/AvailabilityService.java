@@ -129,7 +129,7 @@ public class AvailabilityService {
 
         if (availability.getRuleEnd() != null
             && availability.getRuleEnd().isBefore(availability.getRuleStart())) {
-            throw new IllegalArgumentException("Rule end date must be after rule start date");
+            throw new IllegalArgumentException("The recurring availability rule's end date must be after the rule's start date");
         }
 
         getRecurringOccurrences(availability, LocalDate.now(),
@@ -162,7 +162,8 @@ public class AvailabilityService {
         );
 
         if (exceptionRepository.existsByExceptionDateAndRecurringAvailabilityId(exceptionDate, recurringId)) {
-            throw new IllegalStateException("An exception already exists for date " + exceptionDate);
+            throw new IllegalStateException("An exception for this recurring availability " +
+                                                    "already exists for date " + exceptionDate);
         }
         if (getRecurringOccurrences(recurringAvailability, exceptionDate, exceptionDate).isEmpty()) {
             throw new IllegalArgumentException("The date " + exceptionDate
@@ -350,7 +351,7 @@ public class AvailabilityService {
                                                .anyMatch(existing -> existing.overlaps(newInterval));
 
         if (hasConflict) {
-            throw new IllegalStateException("New availability conflicts with an existing availability");
+            throw new IllegalStateException("The new or updated availability conflicts with an existing availability");
         }
     }
 

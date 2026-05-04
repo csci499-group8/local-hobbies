@@ -57,7 +57,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             boolean onboardingComplete = Boolean.TRUE.equals(claims.get("onboardingComplete", Boolean.class));
             if (!isOnboardingExempt && !onboardingComplete) {
-                throw new OnboardingIncompleteException("Onboarding not complete");
+                throw new OnboardingIncompleteException();
             }
 
             //authenticate request

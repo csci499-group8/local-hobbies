@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+//TODO: add creationTime field to hobby photos so that they can be ordered in client?
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -41,7 +43,7 @@ public class HobbyService {
     @Transactional
     public HobbyResponse addHobby(UUID userId, HobbyCreationRequest request) {
         if (hobbyRepository.existsByUserIdAndName(userId, request.name())) {
-            throw new IllegalStateException("Hobby already exists");
+            throw new IllegalStateException("The hobby " + request.name() + " already exists");
         }
 
         Hobby hobby = hobbyMapper.toEntity(request, userId);
@@ -178,7 +180,7 @@ public class HobbyService {
                                                .map(HobbyCreationRequest::name)
                                                .collect(Collectors.toSet());
         if (uniqueHobbies.size() < requests.size()) {
-            throw new IllegalArgumentException("Onboarding hobby list contains duplicate hobbies");
+            throw new IllegalArgumentException("The onboarding hobby list contains duplicate hobbies");
         }
 
         //save hobbies
