@@ -120,6 +120,7 @@ export const useHobby = () => {
         //hobby photos
         hobbyPhotos: hobbyPhotosQuery.data ?? [],
         hobbyPhotosLoading: hobbyPhotosQuery.isLoading,
+        hobbyPhotosSyncing: hobbyPhotosQuery.isFetching || addHobbyPhotoMutation.isPending || deleteHobbyPhotoMutation.isPending,
         hobbyPhotosError: hobbyPhotosQuery.error?.message ?? null,
 
         //write operations
@@ -146,6 +147,7 @@ export const useHobbyPhotosByHobby = (hobbyId: string) => {
     return {
         hobbyPhotos: query.data ?? [],
         hobbyPhotosLoading: query.isLoading,
+        hobbyPhotosSyncing: query.isFetching,
         hobbyPhotosError: query.error?.message ?? null,
     };
 };

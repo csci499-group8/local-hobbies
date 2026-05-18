@@ -18,9 +18,11 @@ public record UserUpdateRequest(
     JsonNullable<String> genderDisplayed, //nullable
     JsonNullable<String> bio, //nullable
     @NotNullIfPresent @Valid JsonNullable<GeoJsonPoint> location,
-    @NotNullIfPresent JsonNullable<String> publicContactInfo,
+    @NotNullIfPresent JsonNullable<String> contactInfo,
     JsonNullable<String> profilePhotoKey, //nullable
     @NotNullIfPresent JsonNullable<UserGenderMatched> genderMatched,
     @NotNullIfPresent JsonNullable<Boolean> showAge,
     @NotNullIfPresent JsonNullable<Boolean> showGenderDisplayed
-) {}
+) {
+    //TODO: prevent request from being submitted if birthdate indicates <18y old, strings are unsafe (check only if fields are present)
+}

@@ -18,11 +18,12 @@ public record OtherUserProfileResponse (
     String genderDisplayed, //null if not set or if showGenderDisplayed is false
     String bio, //nullable
     @NotBlank String locationApproximate,
-    @NotBlank String publicContactInfo,
+    String contactInfo, //null if not a mutual match
     String profilePhotoUrl, //nullable
     @Valid @NotNull List<HobbyResponse> hobbies, //may be empty (but user won't show up in searches)
     @Valid @NotNull List<HobbyPhotoResponse> hobbyPhotos, //may be empty
     @NotNull boolean isSavedMatch,
+    @NotNull boolean isMutualMatch,
     @Valid @NotNull List<HobbyOverlapResponse> overlappingHobbies, //may be empty
     @Valid @NotNull List<AvailabilityOverlapResponse> overlappingAvailabilities //may be empty
 ) {}

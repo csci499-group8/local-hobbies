@@ -92,10 +92,10 @@ export default function MutualMatchesScreen() {
 }
 
 const styles = StyleSheet.create({
-    screen: {flex: 1, backgroundColor: '#f8f9fa'},
+    screen: {flex: 1},
     centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
     list: {padding: 16, paddingBottom: 100},
     emptyContainer: {marginTop: 100, alignItems: 'center', gap: 12},
-    emptySubtext: commonStyles.mutedText,
+    emptySubtext: {opacity: 0.6, textAlign: 'center'},
     modal: {backgroundColor: 'white', margin: 24, borderRadius: 12, padding: 24},
 });

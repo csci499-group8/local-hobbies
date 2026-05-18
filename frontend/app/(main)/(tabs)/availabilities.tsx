@@ -1,6 +1,7 @@
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {View, ScrollView, StyleSheet, Alert} from 'react-native';
-import {ActivityIndicator, Text, Appbar, FAB, Portal, Modal, Divider} from 'react-native-paper';
+import {ActivityIndicator, Text, Appbar, FAB, Portal, Modal, Divider, ProgressBar} from 'react-native-paper';
+import {DateTime} from 'luxon';
 import {useAvailability} from '@/src/hooks/useAvailability';
 import {useAvailabilityActions} from '@/src/hooks/useAvailabilityActions';
 import {AvailabilityCalendar, MAX_CALENDAR_HEIGHT} from '@/src/components/availability/AvailabilityCalendar';
@@ -14,6 +15,7 @@ import {
     OneTimeAvailabilityResponse,
     RecurringAvailabilityResponse,
     AvailabilityExceptionResponse,
+    AvailabilityType,
 } from '@/src/types/availability';
 import {spacing} from "@/src/theme";
 
@@ -27,10 +29,35 @@ type ModalState =
     | {type: 'EDIT_EXCEPTION'; item: AvailabilityExceptionResponse};
 
 export default function AvailabilitiesScreen() {
-    const {schedule, scheduleLoading, scheduleError} = useAvailability();
+    const {schedule, scheduleLoading, scheduleFetching, scheduleError} = useAvailability();
     const actions = useAvailabilityActions();
     const [modalState, setModalState] = useState<ModalState>({type: 'CLOSED'});
     const [fabOpen, setFabOpen] = useState(false);
+
+    // Extract valid exception dates for each recurring availability
+    // by collecting unique dates from schedule.intervals
+    const recurringDatesMap = useMemo(() => {
+        if (!schedule) return new Map<string, string[]>();
+        
+        const map = new Map<string, string[]>();
+        const {recurrings} = schedule.availabilities;
+        
+        recurrings.forEach(recurring => {
+            const dates = schedule.intervals
+                .filter(interval =>
+                    interval.sourceType === AvailabilityType.RecurringAvailability &&
+                    interval.sourceId === recurring.id
+                )
+                .map(interval => DateTime.fromISO(interval.start).toISODate()!)
+                //for each index, if date first appears at that index, keep that date (prevents duplicates)
+                .filter((date, index, self) => self.indexOf(date) === index)
+                .sort();
+            
+            map.set(recurring.id, dates);
+        });
+        
+        return map;
+    }, [schedule?.intervals, schedule?.availabilities.recurrings]);
 
     const close = () => setModalState({type: 'CLOSED'});
 
@@ -53,13 +80,19 @@ export default function AvailabilitiesScreen() {
             <Appbar.Header>
                 <Appbar.Content title="Schedule" />
             </Appbar.Header>
+            
+            {/* Show progress bar when refetching */}
+            {scheduleFetching && !scheduleLoading && (
+                <ProgressBar indeterminate style={styles.progressBar} />
+            )}
 
             <ScrollView
                 contentContainerStyle={styles.list}
             >
 
                 {/* Calendar overview */}
-                <View style={styles.calendarContainer}>
+                <View>
+                {/*<View style={styles.calendarContainer}>*/}
                     <AvailabilityCalendar
                         mode="schedule"
                         intervals={schedule.intervals}
@@ -189,6 +222,7 @@ export default function AvailabilitiesScreen() {
                                     inlineLocation={true}
                                     recurringId={modalState.recurringId}
                                     recurrings={recurrings}
+                                    allowedDates={recurringDatesMap.get(modalState.recurringId) ?? []}
                                     onSubmit={req => actions.handleAddException(req, close)}
                                     onDismiss={close}
                                     isSubmitting={actions.isSubmitting}
@@ -212,11 +246,10 @@ export default function AvailabilitiesScreen() {
 }
 
 const styles = StyleSheet.create({
-    screen: {flex: 1, backgroundColor: '#f8f9fa'},
+    screen: {flex: 1},
+    progressBar: {height: 3},
     centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
     list: {padding: 16, paddingBottom: 100, gap: 8},
-    calendarContainer: {width: '100%'},
-    // calendarContainer: {height: 350, overflow: 'hidden', marginBottom: spacing.md}, //TODO: use availability calendar's calculated height?
     divider: {marginVertical: 8},
     sectionTitle: {
         fontWeight: 'bold',

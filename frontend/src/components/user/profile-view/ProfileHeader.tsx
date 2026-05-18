@@ -27,7 +27,7 @@ export const ProfileHeader = ({
             {profilePhotoUrl ? (
                 <Image
                     source={{uri: profilePhotoUrl}}
-                    style={styles.profileImage}
+                    style={styles.profilePhoto}
                     contentFit="cover"
                 />
             ) : (
@@ -56,16 +56,16 @@ export const ProfileHeader = ({
 
 const styles = StyleSheet.create({
     headerSection: {alignItems: 'center', paddingVertical: 30, paddingHorizontal: 16, gap: 4,},
-    profileImage: {
+    profilePhoto: {
         width: 120,
         height: 120,
         borderRadius: 60,
         marginBottom: 12,
-        borderColor: theme.colors.tertiaryContainer,
-        borderWidth: 3,
+        borderColor: theme.colors.tertiary,
+        borderWidth: 4,
     },
     nameText: {fontWeight: 'bold'},
-    subHeaderText: {opacity: 0.7},
+    subHeaderText: {opacity: 0.6},
     locationRow: {
         flexDirection: 'row',
         alignItems: 'center',

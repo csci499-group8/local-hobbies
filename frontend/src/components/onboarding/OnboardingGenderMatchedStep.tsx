@@ -24,7 +24,8 @@ export const OnboardingGenderMatchedStep = ({initialValue, onComplete, isSubmitt
     return (
         <View style={styles.container}>
             <Text variant="bodyMedium" style={styles.description}>
-                This is used for matching only and is never shown on your profile.
+                This is used in searches so that others can match with you. It will not otherwise be shown to other users.
+                You can personalize your displayed gender on your profile.
             </Text>
             <View style={styles.options}>
                 {Object.values(UserGenderMatched).map(gender => (
@@ -45,7 +46,7 @@ export const OnboardingGenderMatchedStep = ({initialValue, onComplete, isSubmitt
                 disabled={!selected || isSubmitting}
                 style={styles.button}
             >
-                <Text>Continue</Text>
+                Continue
             </Button>
         </View>
     );

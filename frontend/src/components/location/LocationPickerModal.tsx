@@ -32,5 +32,5 @@ export const LocationPickerModal = ({visible, initialLocation, onConfirm, onDism
 );
 
 const styles = StyleSheet.create({
-    modal: {flex: 1, margin: 0, backgroundColor: theme.colors.surface},
+    modal: {flex: 1, margin: 0, backgroundColor: theme.colors.onPrimary},
 });

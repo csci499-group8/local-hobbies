@@ -6,55 +6,45 @@ import {
     OnboardingSectionName,
     IncompleteReason,
 } from '@/src/types/user';
-import {colors, spacing, commonStyles} from '@/src/theme';
+import {theme, spacing, commonStyles} from '@/src/theme';
 
 interface OverviewStep {
     name: OnboardingSectionName;
     label: string;
-    description: string;
 }
 
 const OVERVIEW_STEPS: OverviewStep[] = [
     {
         name: OnboardingSectionName.Name,
         label: 'Display Name',
-        description: 'How you appear to other users',
     },
     {
         name: OnboardingSectionName.BirthDate,
         label: 'Date of Birth',
-        description: 'Used to verify you are 18 or older', //TODO: age limit? 13??
     },
     {
         name: OnboardingSectionName.Location,
         label: 'Location',
-        description: 'Helps find nearby matches',
     },
     {
-        name: OnboardingSectionName.PublicContactInfo,
+        name: OnboardingSectionName.ContactInfo,
         label: 'Contact Info',
-        description: 'Shown to your matches so they can reach you',
     },
     {
         name: OnboardingSectionName.GenderMatched,
         label: 'Matching Gender',
-        description: 'Gender used in searches so that others can match with you. This will not ' +
-            'be shown to others. You can personalize your displayed gender on your profile',
     },
     {
         name: OnboardingSectionName.ShowAge, //includes showGenderDisplayed because the two are too thin for separate steps
         label: 'Privacy Settings',
-        description: 'Controls what appears on your profile',
     },
     {
         name: OnboardingSectionName.Hobbies,
         label: 'Hobbies',
-        description: 'What you are matched on',
     },
     {
         name: OnboardingSectionName.Availabilities,
         label: 'Availability',
-        description: 'When you are free to meet up',
     },
 ];
 
@@ -136,11 +126,11 @@ export const OnboardingOverview = ({incompleteSections, onStart}: Props) => {
                                 >
                                     {step.label}
                                 </Text>
-                                <Text variant="bodySmall" style={styles.stepDescription}>
-                                    {incomplete && reason
-                                        ? REASON_LABELS[reason]
-                                        : step.description}
-                                </Text>
+                                {incomplete && reason && (
+                                    <Text variant="bodySmall" style={styles.stepDescription}>
+                                        {REASON_LABELS[reason]}
+                                    </Text>
+                                )}
                             </View>
 
                             {!incomplete && (
@@ -177,9 +167,10 @@ export const OnboardingOverview = ({incompleteSections, onStart}: Props) => {
 const styles = StyleSheet.create({
     container: {gap: spacing.lg},
     header: {gap: spacing.sm},
-    title: {fontWeight: 'bold', color: colors.textPrimary},
-    subtitle: {color: colors.textSecondary, lineHeight: 22},
-    previewLabel: {color: colors.textMuted, letterSpacing: 1.5},
+    title: {fontWeight: 'bold', color: theme.colors.primary},
+    subtitle: {color: theme.colors.tertiaryDark, lineHeight: 22},
+    previewLabel: commonStyles.mutedText,
+    // previewLabel: {color: theme.colors.primary, opacity: 0.6, letterSpacing: 1.5},
     stepList: {gap: spacing.md},
     stepRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.md},
     stepNumber: {
@@ -187,18 +178,18 @@ const styles = StyleSheet.create({
         height: 28,
         borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: colors.primary,
+        borderColor: theme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    stepNumberComplete: {backgroundColor: colors.primary, borderColor: colors.primary},
-    stepNumberText: {color: colors.primary, fontWeight: 'bold'},
-    stepNumberTextComplete: {color: colors.surface, fontWeight: 'bold'},
+    stepNumberComplete: {backgroundColor: theme.colors.primary, borderColor: theme.colors.primary},
+    stepNumberText: {color: theme.colors.primary, fontWeight: 'bold'},
+    stepNumberTextComplete: {color: theme.colors.tertiaryDark, fontWeight: 'bold'},
     stepInfo: {flex: 1, gap: 2},
-    stepLabel: {color: colors.textPrimary, fontWeight: '600'},
-    stepLabelComplete: {color: colors.textSecondary},
-    stepDescription: {color: colors.textMuted},
-    doneLabel: {color: colors.primary, fontWeight: '600'},
+    stepLabel: {color: theme.colors.primary, fontWeight: '600'},
+    stepLabelComplete: {color: theme.colors.tertiaryDark},
+    stepDescription: commonStyles.mutedText,
+    doneLabel: {color: theme.colors.primary, fontWeight: '600'},
     button: {marginTop: spacing.sm},
-    note: {color: colors.textMuted, textAlign: 'center', lineHeight: 18},
+    note: {color: theme.colors.tertiaryDark, textAlign: 'center', lineHeight: 18},
 });

@@ -23,6 +23,8 @@ server:
   port: ${PORT:8080}
 
 application:
+  seeder:
+    enabled: true #database seeder toggle
   security:
     jwt:
       secret-key: ${DEV_JWT_SECRET_KEY}

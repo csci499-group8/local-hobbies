@@ -7,7 +7,9 @@ import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFound
 import io.github.csci499_group8.local_hobbies.backend.mapper.MatchMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.SavedMatch;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienceLevel;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.UserGenderMatched;
 import io.github.csci499_group8.local_hobbies.backend.repository.SavedMatchRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.UserSpecifications;
 import io.github.csci499_group8.local_hobbies.backend.repository.projections.MutualMatchProjection;
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 
 import static io.github.csci499_group8.local_hobbies.backend.service.LocationService.calculateDistanceKilometers;
@@ -43,8 +47,16 @@ public class MatchService {
             List<AvailabilityOverlapResponse> overlaps
     ) {}
 
+    private record ScoredResult(
+        double score, 
+        MatchSearchResultResponse result
+    ) {}
+
     // --- methods called by MatchController ---
 
+    /**
+     * Find matches that fit hard filters. Sort results by match score, which takes into account soft filters.
+     */
     @Transactional(readOnly = true)
     public List<MatchSearchResultResponse> searchForMatches(UUID currentUserId, MatchSearchRequest request) {
         User currentUser = userService.getUserByIdOrThrow(currentUserId);
@@ -77,7 +89,12 @@ public class MatchService {
         //get set of IDs of all users who have saved current user
         Set<UUID> userIdsOfInboundMatches = savedMatchRepository.findAllUserIdsOfInboundMatches(currentUserId);
 
-        //assemble and return responses
+        //get map of every matched user's experience level for the searched hobby
+        Map<UUID, HobbyExperienceLevel> experienceLevels =
+                hobbyService.getExperienceLevelsOfMatchCandidates(matches.stream().map(m -> m.matchedUser().getId()).toList(),
+                                                                  request.hobby());
+
+        //assemble and score responses, and sort by descending score
         return matches.stream().map(matchedUserWithOverlaps -> {
             //calculate MatchSearchResultResponse.distanceKilometers
 
@@ -94,22 +111,32 @@ public class MatchService {
             MatchSearchResultResponse.MatchDistanceType distanceType = (homeDistanceKilometers < minOverlapDistanceKilometers)
                     ? MatchSearchResultResponse.MatchDistanceType.HOME
                     : MatchSearchResultResponse.MatchDistanceType.NEAREST_OVERLAPPING_AVAILABILITY;
-            Double minDistanceKilometers = Math.min(homeDistanceKilometers, minOverlapDistanceKilometers);
+            double minDistanceKilometers = Math.min(homeDistanceKilometers, minOverlapDistanceKilometers);
 
-            //get match's profile photo URL
+            //get other match result fields
+
             String profilePhotoUrl = matchProfilePhotoKeyToUrl.get(matchedUserWithOverlaps.matchedUser.getProfilePhotoKey());
-
-            //get if match has saved current user
             boolean hasSavedCurrentUser = userIdsOfInboundMatches.contains(matchedUserWithOverlaps.matchedUser.getId());
 
-            return matchMapper.toSearchResultResponse(matchedUserWithOverlaps.matchedUser(),
-                                                      profilePhotoUrl,
-                                                      hasSavedCurrentUser,
-                                                      distanceType,
-                                                      minDistanceKilometers,
-                                                      matchedUserWithOverlaps.overlaps());
-        }
-        ).toList();
+            //score match
+            double score = scoreMatch(matchedUserWithOverlaps.matchedUser(), 
+                                      request,
+                                      hasSavedCurrentUser, 
+                                      minDistanceKilometers,
+                                      experienceLevels.get(matchedUserWithOverlaps.matchedUser.getId()), 
+                                      matchedUserWithOverlaps.overlaps());
+
+            return new ScoredResult(score, matchMapper.toSearchResultResponse(
+                    matchedUserWithOverlaps.matchedUser(),
+                    profilePhotoUrl,
+                    hasSavedCurrentUser,
+                    distanceType,
+                    minDistanceKilometers,
+                    matchedUserWithOverlaps.overlaps()));
+        })
+        .sorted(Comparator.comparingDouble(ScoredResult::score).reversed())
+        .map(ScoredResult::result)
+        .toList();
     }
 
     @Transactional(readOnly = true)
@@ -121,9 +148,22 @@ public class MatchService {
 
     @Transactional
     public SavedMatchResponse createSavedMatch(UUID userId, SavedMatchCreationRequest request) {
-        if (savedMatchRepository.existsByUserIdAndSavedUserIdAndStatus(userId, request.savedUserId(),
-                                                                                   MatchStatus.ACTIVE)) {
-            throw new IllegalStateException("Saved match already exists");
+        Optional<SavedMatch> existingMatchOpt = savedMatchRepository.findByUserIdAndSavedUserId(userId, request.savedUserId());
+
+        if (existingMatchOpt.isPresent()) {
+            SavedMatch existingMatch = existingMatchOpt.get();
+
+            if (existingMatch.getStatus() == MatchStatus.ACTIVE) {
+                throw new IllegalStateException("Saved match already exists");
+            }
+
+            if (existingMatch.getStatus() == MatchStatus.DELETED) {
+                existingMatch.restore();
+                return mapMatchToSavedMatchResponse(savedMatchRepository.save(existingMatch));
+            }
+
+            //in case future statuses are added
+            throw new IllegalStateException("Unhandled match status state: " + existingMatch.getStatus());
         }
 
         SavedMatch match = matchMapper.toEntity(request, userId);
@@ -184,6 +224,61 @@ public class MatchService {
     }
 
     // --- private helper methods ---
+
+    /**
+     * Compute a relevance score for a match candidate (higher = more relevant).
+     * Scoring breakdown (max 100):
+     * <ul>
+     *   <li>35 pts — distance: linearly decaying bonus from 0 km (max pts) to radiusKm (0 pts)</li>
+     *   <li>30 pts — total overlap duration: linearly increasing bonus capped at 480 min (8 h)</li>
+     *   <li>15 pts — inbound match: flat bonus when candidate has already saved current user</li>
+     *   <li>24 pts — soft filter satisfaction: partial points per matched soft filter</li>
+     * </ul>
+     */
+    private double scoreMatch(User match,
+                              MatchSearchRequest request,
+                              boolean hasSavedCurrentUser,
+                              double minDistanceKilometers,
+                              HobbyExperienceLevel experienceLevel,
+                              List<AvailabilityOverlapResponse> overlaps) {
+        double score = 0.0;
+
+        // distance score (35 pts)
+        double distanceRatio = request.radiusKilometers() == 0 //guard against (probably impossible) divide-by-zero error
+                ? 0.0
+                : Math.min(minDistanceKilometers / request.radiusKilometers(), 1.0);
+        score += 35.0 * (1.0 - distanceRatio);
+
+        // overlap duration score (30 pts, capped at 480 min / 8 h)
+        double totalOverlapMinutes = overlaps.stream()
+                .mapToLong(o -> Duration.between(o.start(), o.end()).toMinutes())
+                .sum();
+        score += 30.0 * Math.min(totalOverlapMinutes / 480.0, 1.0);
+
+        // inbound match bonus (15 pts)
+        if (hasSavedCurrentUser) score += 15.0;
+
+        // soft filter bonus (24 pts max)
+        int age = Period.between(match.getBirthDate(), LocalDate.now()).getYears();
+        UserGenderMatched gender = match.getGenderMatched();
+
+        for (MatchSearchRequest.MatchSearchFilter filter : request.filters()) {
+            if (filter.isHard()) continue; // hard filters already enforced; no bonus
+            score += switch (filter) {
+                case MatchSearchRequest.GendersFilter gf ->
+                    gf.genders().contains(gender) ? 6.0 : 0.0;
+                case MatchSearchRequest.MinAgeFilter mf ->
+                    age >= mf.minAge() ? 6.0 : 0.0;
+                case MatchSearchRequest.MaxAgeFilter mf ->
+                    age <= mf.maxAge() ? 6.0 : 0.0;
+                case MatchSearchRequest.ExperienceLevelFilter ef ->
+                    ef.experienceLevel().equals(experienceLevel) ? 6.0 : 0.0;
+            };
+        }
+
+        return score;
+    }
+
 
     /**
      * Return saved match if it exists, it is in the expected state, and the request

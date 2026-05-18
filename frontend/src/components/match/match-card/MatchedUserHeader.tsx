@@ -37,8 +37,8 @@ export const MatchedUserHeader = ({user}: Props) => {
 
 const styles = StyleSheet.create({
     container: {flexDirection: 'row', alignItems: 'center', gap: spacing.md},
-    photo: {width: 56, height: 56, borderRadius: 28, backgroundColor: theme.colors.border},
+    photo: {width: 60, height: 60, borderRadius: 30, borderColor: theme.colors.tertiary, borderWidth: 2},
     info: {flex: 1, gap: 2},
     name: {fontWeight: 'bold'},
-    lastSeen: {opacity: 0.5},
+    lastSeen: {opacity: 0.6},
 });

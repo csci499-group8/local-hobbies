@@ -17,13 +17,20 @@ import {spacing, theme} from '@/src/theme';
 interface Props {
     initialData: UserResponse;
     onSubmit: (data: UserProfileUpdateRequest) => Promise<void>;
+    /** True while the initial user data is being fetched — disables the form. */
     isLoading: boolean;
+    /** True while the form submission (upload + save) is in progress — disables the form. */
+    isSubmitting: boolean;
 }
 
-export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => {
+export const UserProfileForm = ({ initialData, onSubmit, isLoading, isSubmitting }: Props) => {
+    const isDisabled = isLoading || isSubmitting;
     const [showDatePicker, setShowDatePicker] = useState(false);
-    // Track local photo URI for immediate preview
-    const [localPhotoUri, setLocalPhotoUri] = useState<string | null>(null);
+    // Kept in plain React state — not RHF — because setValue on an unregistered
+    // field is unreliable: handleSubmit may not forward it, so updates.photo
+    // arrives as undefined and the upload is silently skipped.
+    // null = user has not picked a new photo this session (keep existing).
+    const [photoAsset, setPhotoAsset] = useState<{uri: string; name: string; type: string} | null>(null);
     // Initial location is existing approximate location
     const locationField = useLocationField(
         initialData.locationPoint,
@@ -36,7 +43,7 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
             birthDate: initialData.birthDate,
             bio: initialData.bio,
             genderDisplayed: initialData.genderDisplayed,
-            publicContactInfo: initialData.publicContactInfo,
+            contactInfo: initialData.contactInfo,
             location: initialData.locationPoint
         }
     });
@@ -56,13 +63,25 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
 
         if (!result.canceled) {
             const asset = result.assets[0];
-            setLocalPhotoUri(asset.uri);
-            setValue('photo', {
+            setPhotoAsset({
                 uri: asset.uri,
                 name: asset.fileName ?? 'profile.jpg',
                 type: asset.mimeType ?? 'image/jpeg',
             });
         }
+    };
+
+    // Called by RHF after validation passes. Merges the locally-tracked photo
+    // into the validated form values before handing off to the parent.
+    // photo: photoAsset ?? undefined means:
+    //   - new photo picked  → photoAsset set → upload runs in useUser.ts
+    //   - no new photo      → photoAsset null → photo undefined → upload skipped,
+    //                         backend keeps the existing profile photo unchanged
+    const handleFormSubmit = (values: UserProfileUpdateRequest) => {
+        onSubmit({
+            ...values,
+            photo: photoAsset ?? undefined,
+        });
     };
 
     const handleLocationConfirm = (loc: GeoJsonPoint, addr: string) => {
@@ -74,17 +93,17 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
     return (
         <View style={styles.container}>
             <View style={styles.photoSection}>
-                {localPhotoUri || initialData.profilePhotoUrl ? (
+                {photoAsset?.uri || initialData.profilePhotoUrl ? (
                     <Image
-                        source={{ uri: localPhotoUri ?? initialData.profilePhotoUrl ?? undefined }}
+                        source={{ uri: photoAsset?.uri ?? initialData.profilePhotoUrl ?? undefined }}
                         style={styles.imageCircle}
                         contentFit="cover"
                     />
                 ) : (
                     <Avatar.Icon size={100} icon="account" />
                 )}
-                <Button onPress={pickImage} disabled={isLoading}>
-                    <Text>Change Photo</Text>
+                <Button onPress={pickImage} disabled={isDisabled}>
+                    Change Photo
                 </Button>
             </View>
 
@@ -100,7 +119,7 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
                             onBlur={onBlur}
                             onChangeText={onChange}
                             error={!!errors.name}
-                            disabled={isLoading}
+                            disabled={isDisabled}
                             mode="outlined"
                         />
                         {errors.name && <HelperText type="error">{errors.name.message}</HelperText>}
@@ -115,8 +134,12 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
                     onPressIn={() => setShowDatePicker(true)}
                     showSoftInputOnFocus={false}
                     mode="outlined"
-                    disabled={isLoading}
-                    right={<TextInput.Icon icon="calendar" onPress={() => setShowDatePicker(true)} />}
+                    disabled={isDisabled}
+                    right={<TextInput.Icon
+                        icon="calendar"
+                        onPress={() => setShowDatePicker(true)}
+                        color={theme.colors.primary}
+                    />}
                 />
                 {showDatePicker && (
                     <DateTimePicker
@@ -146,7 +169,7 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
                         multiline
                         numberOfLines={4}
                         mode="outlined"
-                        disabled={isLoading}
+                        disabled={isDisabled}
                         style={styles.inputGap}
                     />
                 )}
@@ -162,7 +185,7 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
                         onBlur={onBlur}
                         onChangeText={onChange}
                         mode="outlined"
-                        disabled={isLoading}
+                        disabled={isDisabled}
                         style={styles.inputGap}
                     />
                 )}
@@ -173,51 +196,62 @@ export const UserProfileForm = ({ initialData, onSubmit, isLoading }: Props) => 
                     mode="outlined"
                     icon="map-marker"
                     onPress={locationField.openPicker}
-                    disabled={isLoading}
+                    disabled={isDisabled}
                 >
                     {locationField.address ?? 'Set Your Primary Location'}
                 </Button>
                 <HelperText
                     type={!locationField.address ? "error" : "info"}
                     visible={true}
+                    style={styles.hint}
                 >
                     {!locationField.address
                         ? "Location is required so other hobbyists can find you."
-                        : "Your exact coordinates are never shown to other users."
+                        : "Your exact location is never shown to other users."
                     }
                 </HelperText>
             </View>
 
-            <Controller
-                control={control}
-                name="publicContactInfo"
-                rules={{ required: 'Contact information is required' }}
-                render={({ field: { onChange, value, onBlur } }) => (
-                    <View style={styles.inputGap}>
-                        <TextInput
-                            label="Public Contact Info (e.g. Instagram, WhatsApp)"
-                            value={value}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            error={!!errors.publicContactInfo}
-                            disabled={isLoading}
-                            mode="outlined"
-                        />
-                        {errors.publicContactInfo && (
-                            <HelperText type="error">{errors.publicContactInfo.message}</HelperText>
-                        )}
-                    </View>
-                )}
-            />
+            <View>
+                <Controller
+                    control={control}
+                    name="contactInfo"
+                    rules={{ required: 'Contact information is required' }}
+                    render={({ field: { onChange, value, onBlur } }) => (
+                        <View>
+                            <TextInput
+                                label="Contact Info (e.g. Instagram, WhatsApp)"
+                                value={value}
+                                onBlur={onBlur}
+                                onChangeText={onChange}
+                                error={!!errors.contactInfo}
+                                disabled={isDisabled}
+                                mode="outlined"
+                            />
+                            {errors.contactInfo && (
+                                <HelperText type="error">{errors.contactInfo.message}</HelperText>
+                            )}
+                        </View>
+                    )}
+                />
+                <HelperText
+                    type={"info"}
+                    visible={true}
+                    style={styles.hint}
+                >
+                    This is shown only to users who have mutually matched with you so that they can contact you.
+                    It will appear on your profile and on other users' Mutual Matches page.
+                </HelperText>
+            </View>
 
             <Button
                 mode="contained"
-                onPress={handleSubmit(onSubmit)}
-                loading={isLoading}
-                disabled={isLoading}
+                onPress={handleSubmit(handleFormSubmit)}
+                loading={isSubmitting}
+                disabled={isDisabled}
                 style={styles.submitButton}
             >
-                <Text>Save Changes</Text>
+                Save Changes
             </Button>
 
             <LocationPickerModal
@@ -236,5 +270,7 @@ const styles = StyleSheet.create({
     photoSection: {alignItems: 'center', marginBottom: spacing.xxl, gap: spacing.sm},
     imageCircle: {width: 100, height: 100, borderRadius: 50},
     inputGap: {marginBottom: 10},
+    hint: {color: theme.colors.tertiaryDark},
+    description: {color: theme.colors.tertiaryDark, lineHeight: 20},
     submitButton: {marginTop: 18},
 });

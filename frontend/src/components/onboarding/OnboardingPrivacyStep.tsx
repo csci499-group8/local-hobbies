@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {Button, Text, Switch, List} from 'react-native-paper';
-import {spacing, commonStyles} from '@/src/theme';
+import {spacing, commonStyles, theme} from '@/src/theme';
 
 interface Props {
     initialShowAge?: boolean;
@@ -33,6 +33,7 @@ export const OnboardingPrivacyStep = ({
             <List.Item
                 title="Show age"
                 description="Other users will see your age on your profile"
+                descriptionStyle={{color: theme.colors.primary, opacity: 0.6}}
                 right={() => (
                     <Switch value={showAge} onValueChange={setShowAge} disabled={isSubmitting} />
                 )}
@@ -40,6 +41,7 @@ export const OnboardingPrivacyStep = ({
             <List.Item
                 title="Show gender"
                 description="Other users will see your displayed gender on your profile"
+                descriptionStyle={{color: theme.colors.primary, opacity: 0.6}}
                 right={() => (
                     <Switch
                         value={showGenderDisplayed}
@@ -55,7 +57,7 @@ export const OnboardingPrivacyStep = ({
                 disabled={isSubmitting}
                 style={styles.button}
             >
-                <Text>Continue</Text>
+                Continue
             </Button>
         </View>
     );

@@ -20,7 +20,7 @@ import {LocationPickerModal} from '@/src/components/location/LocationPickerModal
 import {LocationPicker} from '@/src/components/location/LocationPicker';
 import {useLocationField} from '@/src/hooks/useLocationField';
 import {DurationPicker, DurationValue} from '@/src/components/availability/DurationPicker';
-import {spacing, commonStyles} from '@/src/theme';
+import {spacing, commonStyles, theme} from '@/src/theme';
 
 type FormValues = {
     date: Date;
@@ -54,6 +54,9 @@ export const OneTimeAvailabilityForm = (props: Props) => {
     const locationField = useLocationField(
         props.mode === 'edit' ? props.item.location : undefined
     );
+    
+    // Limit date selection to 180 days in the future
+    const maxDate = DateTime.now().plus({days: 180}).toJSDate();
 
     const {handleSubmit, setValue, watch} = useForm<FormValues>({
         defaultValues: {
@@ -118,11 +121,15 @@ export const OneTimeAvailabilityForm = (props: Props) => {
             {/* Date selector */}
             <View style={styles.field}>
                 <Text variant="labelLarge">Date</Text>
+                <Text variant="bodySmall" style={styles.hint}>
+                    Date must be within the next 180 days.
+                </Text>
                 <Button
                     mode="outlined"
                     icon="calendar"
                     onPress={() => setShowDatePicker(true)}
                     disabled={props.isSubmitting}
+                    style={commonStyles.lightBackground}
                 >
                     {DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_MED)}
                 </Button>
@@ -132,6 +139,7 @@ export const OneTimeAvailabilityForm = (props: Props) => {
                         mode="date"
                         display={DATE_PICKER_DISPLAY}
                         minimumDate={new Date()}
+                        maximumDate={maxDate}
                         onChange={(_: DateTimePickerEvent, d?: Date) => {
                             setShowDatePicker(Platform.OS === 'ios');
                             if (d) setValue('date', d);
@@ -148,6 +156,7 @@ export const OneTimeAvailabilityForm = (props: Props) => {
                     icon="clock"
                     onPress={() => setShowTimePicker(true)}
                     disabled={props.isSubmitting}
+                    style={commonStyles.lightBackground}
                 >
                     {DateTime.fromJSDate(startTime).toLocaleString(DateTime.TIME_SIMPLE)}
                 </Button>
@@ -167,6 +176,9 @@ export const OneTimeAvailabilityForm = (props: Props) => {
             {/* Duration selector */}
             <View style={styles.field}>
                 <Text variant="labelLarge">Duration</Text>
+                <Text variant="bodySmall" style={styles.hint}>
+                    Duration must be between 15 minutes and 7 days.
+                </Text>
                 <DurationPicker
                     value={duration}
                     onChange={val => setValue('duration', val)}
@@ -183,6 +195,7 @@ export const OneTimeAvailabilityForm = (props: Props) => {
                     icon="map-marker"
                     onPress={locationField.openPicker}
                     disabled={props.isSubmitting}
+                    style={commonStyles.lightBackground}
                 >
                     {locationField.address ?? (locationField.location ? 'Location set' : 'Choose location')}
                 </Button>
@@ -195,7 +208,7 @@ export const OneTimeAvailabilityForm = (props: Props) => {
                     disabled={props.isSubmitting}
                     style={styles.footerButton}
                 >
-                    <Text>Cancel</Text>
+                    Cancel
                 </Button>
                 <Button
                     mode="contained"
@@ -225,6 +238,7 @@ const styles = StyleSheet.create({
     container: {gap: spacing.xl},
     title: commonStyles.sectionTitle,
     field: {gap: spacing.sm},
+    hint: {color: theme.colors.tertiaryDark},
     footer: commonStyles.footer,
     footerButton: commonStyles.footerButton,
     fullScreen: {flex: 1, minHeight: 500},

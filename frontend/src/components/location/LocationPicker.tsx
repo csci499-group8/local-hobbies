@@ -3,8 +3,15 @@ import {StyleSheet, View} from 'react-native';
 import {ActivityIndicator, Button, IconButton, Snackbar, Text} from 'react-native-paper';
 import MapView, {Region} from 'react-native-maps';
 import * as Location from 'expo-location';
+import Constants from 'expo-constants';
 import {GeoJsonPoint, GeometryType} from '@/src/types/common';
 import {colors, commonStyles, spacing, theme} from '@/src/theme';
+
+// Read the Google Maps API key from the native config baked in at build time.
+// Using the REST API directly avoids the expo-location permission requirement
+// that would otherwise block reverse geocoding even when location access is denied.
+const GOOGLE_MAPS_API_KEY: string =
+    Constants.expoConfig?.android?.config?.googleMaps?.apiKey ?? '';
 
 interface Props {
     initialLocation?: GeoJsonPoint;
@@ -18,31 +25,6 @@ const DEFAULT_REGION: Region = {
     longitude: -73.9685,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
-};
-
-//Formats the raw Expo geocoding result into a human-readable string.
-//Handles platform/regional variability in address field availability.
-const formatAddress = (r: Location.LocationGeocodedAddress): string => {
-    const parts: string[] = [];
-
-    // Prioritize street address
-    if (r.streetNumber && r.street) {
-        parts.push(`${r.streetNumber} ${r.street}`);
-    } else if (r.street) {
-        parts.push(r.street);
-    } else if (r.name && r.name !== r.district) {
-        // Fallback to POI name if it's not just the district name
-        parts.push(r.name);
-    }
-
-    // Determine city/locality fallback chain
-    const city = r.city ?? r.district ?? r.subregion;
-    if (city) parts.push(city);
-
-    // Append state/province if distinct from city
-    if (r.region && r.region !== city) parts.push(r.region);
-
-    return parts.length > 0 ? parts.join(', ') : 'Unknown location';
 };
 
 export const LocationPicker = ({initialLocation, onConfirm, onDismiss}: Props) => {
@@ -80,8 +62,10 @@ export const LocationPicker = ({initialLocation, onConfirm, onDismiss}: Props) =
         };
     }, []);
 
-    //Converts coordinates to a physical address with a 300ms debounce.
-    //Debouncing prevents excessive API calls during rapid map scrolling.
+    // Converts coordinates to a human-readable address using the Google Maps
+    // Geocoding REST API directly. This bypasses expo-location's permission gate;
+    // reverse geocoding is a pure network call that does not require device location
+    // access. Debounced 300ms to prevent excessive calls during map panning.
     const geocode = useCallback((latitude: number, longitude: number) => {
         // Cancel any in-flight debounce before scheduling a new one
         if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
@@ -90,15 +74,24 @@ export const LocationPicker = ({initialLocation, onConfirm, onDismiss}: Props) =
         setAddress(null);
 
         geocodeTimer.current = setTimeout(async () => {
+            const coordFallback = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
             try {
-                const results = await Location.reverseGeocodeAsync({latitude, longitude});
-                setAddress(results.length > 0
-                    ? formatAddress(results[0])
-                    : `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
-                );
-            } catch {
-                // Fallback to raw coordinates on error
-                setAddress(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+                const url = `https://maps.googleapis.com/maps/api/geocode/json`
+                    + `?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 'OK' && data.results.length > 0) {
+                    setAddress(data.results[0].formatted_address);
+                } else {
+                    // API returned no results (e.g. ocean coordinates) — log response and fall back to raw coordinates
+                    console.warn(`Geocoding status warning: ${data.status}`);
+                    setAddress(coordFallback);
+                }
+            } catch (error) {
+                // Network failure — log error and fall back to raw coordinates
+                console.error('Geocoding network exception:', error);
+                setAddress(coordFallback);
             } finally {
                 setIsGeocoding(false);
             }
@@ -204,7 +197,7 @@ export const LocationPicker = ({initialLocation, onConfirm, onDismiss}: Props) =
 
                 <View style={styles.buttons}>
                     <Button mode="outlined" onPress={onDismiss} style={styles.button}>
-                        <Text>Cancel</Text>
+                        Cancel
                     </Button>
                     <Button
                         mode="contained"
@@ -212,7 +205,7 @@ export const LocationPicker = ({initialLocation, onConfirm, onDismiss}: Props) =
                         disabled={!centerCoords || isGeocoding || isLocating}
                         style={styles.button}
                     >
-                        <Text>Confirm</Text>
+                        Confirm
                     </Button>
                 </View>
             </View>
@@ -229,23 +222,27 @@ export const LocationPicker = ({initialLocation, onConfirm, onDismiss}: Props) =
 };
 
 // PIN_HEAD_SIZE and PIN_STEM_HEIGHT determine how far up the pin head sits
-// above the true center. The container is offset upward by the full pin height
-// so the stem tip sits exactly at the map center point.
+// above the true map center. The pinContainer is constrained to MAP_HEIGHT so
+// that justifyContent:'center' is relative to the map area only, not the full
+// component (which also includes the footer). The stem tip then sits at exactly
+// MAP_HEIGHT / 2 when marginBottom equals the total pin height.
+const MAP_HEIGHT = 400;
+const FOOTER_HEIGHT = 200; // footer min-height; container = MAP_HEIGHT + FOOTER_HEIGHT
 const PIN_HEAD_SIZE = 24;
 const PIN_STEM_HEIGHT = 16;
 
 const styles = StyleSheet.create({
-    container: {height: 600},
-    map: {height: 400},
+    container: {height: MAP_HEIGHT + FOOTER_HEIGHT},
+    map: {height: MAP_HEIGHT},
+    // Absolutely positioned so the stem tip lands exactly at map center.
+    // top = MAP_HEIGHT/2 - (PIN_HEAD_SIZE + PIN_STEM_HEIGHT) = 200 - 40 = 160px
+    // → pinHead: 160–184px, pinStem: 184–200px, tip at 200px = MAP_HEIGHT/2.
     pinContainer: {
         position: 'absolute',
-        top: 0,
+        top: MAP_HEIGHT / 2 - PIN_HEAD_SIZE - PIN_STEM_HEIGHT,
         left: 0,
         right: 0,
-        bottom: 0,
         alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: PIN_HEAD_SIZE + PIN_STEM_HEIGHT,
     },
     pinHead: {
         width: PIN_HEAD_SIZE,
@@ -259,8 +256,8 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     pinStem: {width: 2, height: PIN_STEM_HEIGHT, backgroundColor: colors.pin},
-    locationButton: {position: 'absolute', right: spacing.lg, top: spacing.lg, backgroundColor: theme.colors.surface},
-    footer: {backgroundColor: theme.colors.surface, padding: spacing.lg, gap: 10, minHeight: 130},
+    locationButton: {position: 'absolute', right: spacing.lg, top: spacing.lg, backgroundColor: theme.colors.primaryLight},
+    footer: {backgroundColor: theme.colors.onPrimary, padding: spacing.lg, gap: 10, minHeight: 130},
     hint: commonStyles.mutedText,
     geocodingRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
     geocodingText: {opacity: 0.6},

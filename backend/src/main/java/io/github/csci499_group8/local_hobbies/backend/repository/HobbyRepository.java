@@ -2,14 +2,15 @@ package io.github.csci499_group8.local_hobbies.backend.repository;
 
 import io.github.csci499_group8.local_hobbies.backend.dto.hobby.HobbyOverlapResponse;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienceLevel;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public interface HobbyRepository extends JpaRepository<Hobby, UUID> {
@@ -39,5 +40,27 @@ public interface HobbyRepository extends JpaRepository<Hobby, UUID> {
                                                       @Param("otherUserId") UUID otherUserId);
 
     boolean existsByUserIdAndName(UUID userId, HobbyName name);
+
+    /**
+     * Fetch user IDs and experience levels for a specific hobby across a set of candidates.
+     * Called by HobbyRepository.fetchExperienceLevels().
+     */
+    @Query("""
+        SELECT h.userId, h.experienceLevel
+        FROM Hobby h
+        WHERE h.userId IN :candidateIds
+          AND h.name = :hobbyName
+    """)
+    List<Object[]> findExperienceLevelsRaw(@Param("candidateIds") List<UUID> candidateIds,
+                                           @Param("hobbyName") HobbyName hobbyName);
+
+    default Map<UUID, HobbyExperienceLevel> fetchExperienceLevels(List<UUID> candidateIds,
+                                                                  HobbyName hobbyName) {
+        return findExperienceLevelsRaw(candidateIds, hobbyName).stream()
+                .collect(Collectors.toMap(
+                    row -> (UUID) row[0],
+                    row -> (HobbyExperienceLevel) row[1]
+                ));
+    }
 
 }

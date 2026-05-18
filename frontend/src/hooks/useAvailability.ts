@@ -33,7 +33,7 @@ export const useAvailability = () => {
     const addOneTimeMutation = useMutation({
         mutationFn: availabilityService.addOneTimeAvailability,
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -41,7 +41,7 @@ export const useAvailability = () => {
         mutationFn: ({oneTimeId, request}: {oneTimeId: string; request: OneTimeAvailabilityUpdateRequest}) =>
             availabilityService.updateOneTimeAvailability(oneTimeId, request),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -49,7 +49,7 @@ export const useAvailability = () => {
         mutationFn: (oneTimeId: string) =>
             availabilityService.deleteOneTimeAvailability(oneTimeId),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -59,7 +59,7 @@ export const useAvailability = () => {
         mutationFn: (request: RecurringAvailabilityCreationRequest) =>
             availabilityService.addRecurringAvailability(request),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -67,7 +67,7 @@ export const useAvailability = () => {
         mutationFn: ({recurringId, request}: {recurringId: string; request: RecurringAvailabilityUpdateRequest}) =>
             availabilityService.updateRecurringAvailability(recurringId, request),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -75,7 +75,7 @@ export const useAvailability = () => {
         mutationFn: (recurringId: string) =>
             availabilityService.deleteRecurringAvailability(recurringId),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -85,7 +85,7 @@ export const useAvailability = () => {
         mutationFn: (request: AvailabilityExceptionCreationRequest) =>
             availabilityService.addAvailabilityException(request),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -93,14 +93,14 @@ export const useAvailability = () => {
         mutationFn: ({exceptionId, request}: {exceptionId: string; request: AvailabilityExceptionUpdateRequest}) =>
             availabilityService.updateAvailabilityException(exceptionId, request),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
     const deleteExceptionMutation = useMutation({
         mutationFn: (exceptionId: string) => availabilityService.deleteAvailabilityException(exceptionId),
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
+            return queryClient.invalidateQueries({queryKey: availabilityKeys.schedule()});
         },
     });
 
@@ -108,6 +108,7 @@ export const useAvailability = () => {
         //schedule
         schedule: scheduleQuery.data ?? null,
         scheduleLoading: scheduleQuery.isLoading,
+        scheduleFetching: scheduleQuery.isFetching,
         scheduleError: scheduleQuery.error?.message ?? null,
 
         //one-time availabilities

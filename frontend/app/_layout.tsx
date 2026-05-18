@@ -9,9 +9,22 @@ if (typeof Blob !== 'undefined') {
 import {useEffect} from 'react';
 import {Stack, useRouter, useSegments} from 'expo-router';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {PaperProvider} from 'react-native-paper';
+import {PaperProvider, adaptNavigationTheme} from 'react-native-paper';
+import {ThemeProvider, DefaultTheme, Theme} from '@react-navigation/native';
 import {AuthProvider, useAuth} from '@/src/context/AuthContext';
 import {theme} from '@/src/theme';
+import {LogBox} from 'react-native';
+
+// AvailabilityCalendar renders a FlatList (virtualized, supports up to 180 day groups)
+// inside a ScrollView. nestedScrollEnabled handles the scroll correctly on Android,
+// but React Native still emits this dev-only warning. The warning is suppressed here
+// since the pattern is intentional.
+LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
+
+const {LightTheme} = adaptNavigationTheme({
+    reactNavigationLight: DefaultTheme,
+    materialLight: theme,
+}) as {LightTheme: Theme};
 
 const queryClient = new QueryClient();
 
@@ -19,11 +32,6 @@ function RootNavigator() {
     const {user, isLoading} = useAuth();
     const segments = useSegments();
     const router = useRouter();
-
-    useEffect(() => {
-        console.log('Root layout mounted');
-        return () => console.log('Root layout unmounted');
-    }, []);
 
     useEffect(() => {
         if (isLoading) return;
@@ -48,9 +56,11 @@ export default function RootLayout() {
     return (
         <QueryClientProvider client={queryClient}>
             <PaperProvider theme={theme}>
-                <AuthProvider>
-                    <RootNavigator />
-                </AuthProvider>
+                <ThemeProvider value={LightTheme}>
+                    <AuthProvider>
+                        <RootNavigator />
+                    </AuthProvider>
+                </ThemeProvider>
             </PaperProvider>
         </QueryClientProvider>
     );

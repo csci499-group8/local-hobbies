@@ -4,7 +4,7 @@ import {Button, TextInput, Text} from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {DateTime} from 'luxon';
 import {DATE_PICKER_DISPLAY} from "@/src/utils/date-helpers";
-import {spacing, commonStyles} from '@/src/theme';
+import {spacing, commonStyles, theme} from '@/src/theme';
 
 interface Props {
     initialValue?: string;
@@ -17,7 +17,7 @@ export const OnboardingBirthDateStep = ({initialValue, onComplete, isSubmitting}
     const [date, setDate] = useState<Date>(
         initialValue
             ? DateTime.fromISO(initialValue).toJSDate()
-            : DateTime.now().minus({years: 25}).toJSDate()
+            : DateTime.local(2000, 1, 1).toJSDate()
     );
 
     const formatted = DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_FULL);
@@ -31,7 +31,11 @@ export const OnboardingBirthDateStep = ({initialValue, onComplete, isSubmitting}
                 showSoftInputOnFocus={false}
                 mode="outlined"
                 disabled={isSubmitting}
-                right={<TextInput.Icon icon="calendar" onPress={() => setShowPicker(true)} />}
+                right={<TextInput.Icon
+                    icon="calendar"
+                    color={theme.colors.primary}
+                    onPress={() => setShowPicker(true)}
+                />}
             />
             {showPicker && (
                 <DateTimePicker
@@ -54,7 +58,7 @@ export const OnboardingBirthDateStep = ({initialValue, onComplete, isSubmitting}
                 disabled={isSubmitting}
                 style={styles.button}
             >
-                <Text>Continue</Text>
+                Continue
             </Button>
         </View>
     );
@@ -62,6 +66,6 @@ export const OnboardingBirthDateStep = ({initialValue, onComplete, isSubmitting}
 
 const styles = StyleSheet.create({
     container: {gap: spacing.lg},
-    note: commonStyles.mutedText,
+    note: {color: theme.colors.tertiaryDark},
     button: {marginTop: spacing.sm},
 });

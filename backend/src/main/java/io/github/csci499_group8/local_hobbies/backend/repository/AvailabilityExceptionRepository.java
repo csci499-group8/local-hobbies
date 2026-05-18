@@ -17,6 +17,15 @@ public interface AvailabilityExceptionRepository extends JpaRepository<Availabil
 
     List<AvailabilityException> findAllByUserId(UUID userId);
 
+    @Query("""
+        SELECT e FROM AvailabilityException e
+        WHERE e.userId = :userId
+        AND e.exceptionDate > :cutoffDate
+        ORDER BY e.exceptionDate
+    """)
+    List<AvailabilityException> findActiveByUserId(@Param("userId") UUID userId,
+                                                   @Param("cutoffDate") LocalDate cutoffDate);
+
     boolean existsByExceptionDateAndRecurringAvailabilityId(LocalDate exceptionDate,
                                                             UUID recurringAvailabilityId);
 

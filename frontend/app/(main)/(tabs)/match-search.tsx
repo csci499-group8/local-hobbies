@@ -1,12 +1,13 @@
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {ScrollView, StyleSheet, View, Alert} from 'react-native';
-import {ActivityIndicator, Text, Appbar, Portal, Modal} from 'react-native-paper';
+import {ActivityIndicator, Text, Appbar, Portal, Modal, ProgressBar} from 'react-native-paper';
 import {useMatch, useMatchSearch} from '@/src/hooks/useMatch';
 import {MatchSearchForm} from '@/src/components/match/MatchSearchForm';
 import {MatchSearchResultCard} from '@/src/components/match/MatchSearchResultCard';
 import {SavedMatchForm} from '@/src/components/match/SavedMatchForm';
 import {MatchSearchResultResponse} from '@/src/types/match';
 import {useGlobalHobby} from "@/src/hooks/useGlobalHobby";
+import {useHobby} from '@/src/hooks/useHobby';
 import {colors, spacing} from '@/src/theme';
 
 type ActiveSaveState =
@@ -15,15 +16,22 @@ type ActiveSaveState =
 
 export default function MatchSearchScreen() {
     const {globalHobbies, globalHobbiesLoading} = useGlobalHobby();
+    
+    // Allow users to only search for matches in hobbies they participate in
+    const {hobbies, hobbiesLoading} = useHobby();
+    const userHobbyNames = new Set(hobbies.map(h => h.name));
+    const userGlobalHobbies = globalHobbies.filter(h => userHobbyNames.has(h.name));
+
     const {searchResults, searchLoading, searchError, searchForMatches} = useMatchSearch();
     const [hasSearched, setHasSearched] = useState(false);
 
-    const {savedMatches, createSavedMatch} = useMatch();
+    const {savedMatches, savedMatchesLoading, savedMatchesFetching, createSavedMatch} = useMatch();
     const [activeSaveState, setActiveSaveState] = useState<ActiveSaveState>({type: 'CLOSED'});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Track saved user IDs so cards can show saved state immediately
-    const savedUserIds = new Set(savedMatches.map(m => m.savedUser.id));
+    const savedUserIds = useMemo(() => {
+        return new Set(savedMatches.map(m => m.savedUser.id));
+    }, [savedMatches]);
 
     const handleSearch = async (request: Parameters<typeof searchForMatches>[0]) => {
         setHasSearched(true);
@@ -36,12 +44,14 @@ export default function MatchSearchScreen() {
 
     const handleSave = async (notes: string | null) => {
         if (activeSaveState.type !== 'SAVING') return;
+        const userId = activeSaveState.result.matchedUser.id;
         setIsSubmitting(true);
         try {
             await createSavedMatch({
-                savedUserId: activeSaveState.result.matchedUser.id,
+                savedUserId: userId,
                 notes,
             });
+
             setActiveSaveState({type: 'CLOSED'});
         } catch (e: unknown) {
             Alert.alert('Error', e instanceof Error ? e.message : 'An unexpected error occurred');
@@ -53,13 +63,18 @@ export default function MatchSearchScreen() {
     return (
         <View style={styles.screen}>
             <Appbar.Header>
-                <Appbar.Content title="Discover" />
+                <Appbar.Content title="Discover Matching Users" />
             </Appbar.Header>
+            
+            {/* Show progress bar when refetching saved matches */}
+            {savedMatchesFetching && !savedMatchesLoading && (
+                <ProgressBar indeterminate style={styles.progressBar} />
+            )}
 
             <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
                 <MatchSearchForm
-                    globalHobbies={globalHobbies}
-                    globalHobbiesLoading={globalHobbiesLoading}
+                    globalHobbies={userGlobalHobbies}
+                    globalHobbiesLoading={globalHobbiesLoading || hobbiesLoading}
                     onSubmit={handleSearch}
                     isSearching={searchLoading}
                 />
@@ -137,7 +152,8 @@ export default function MatchSearchScreen() {
 }
 
 const styles = StyleSheet.create({
-    screen: {flex: 1, backgroundColor: '#f8f9fa'},
+    screen: {flex: 1},
+    progressBar: {height: 3},
     list: {padding: 16, paddingBottom: 100},
     searchingContainer: {alignItems: 'center', gap: 12, paddingVertical: 32},
     searchingText: {opacity: 0.6},
@@ -149,10 +165,10 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
         marginBottom: 8,
     },
-    emptyContainer: {alignItems: 'center', marginTop: 48},
-    emptyText: {opacity: 0.5, fontStyle: 'italic', textAlign: 'center'},
     modal: {backgroundColor: 'white', margin: 24, borderRadius: 12, padding: 24},
+    emptyContainer: {alignItems: 'center', marginTop: 48},
+    emptyText: {opacity: 0.6, textAlign: 'center'}, //fontStyle: 'italic',
     noResultsContainer: {padding: spacing.xxl, alignItems: 'center', gap: spacing.sm},
-    noResultsText: {color: colors.textPrimary, fontWeight: '600', textAlign: 'center'},
-    noResultsHint: {color: colors.textMuted, textAlign: 'center', lineHeight: 20},
+    noResultsText: {textAlign: 'center'}, //fontWeight: '600',
+    noResultsHint: {opacity: 0.6, textAlign: 'center'}, //, lineHeight: 20
 });

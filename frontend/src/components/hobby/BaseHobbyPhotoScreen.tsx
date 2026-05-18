@@ -4,7 +4,7 @@
 
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet, View, Alert} from 'react-native';
-import {FAB, Portal, Modal} from 'react-native-paper';
+import {FAB, Portal, Modal, Text} from 'react-native-paper';
 import {useHobby} from '@/src/hooks/useHobby';
 import {HobbyPhotoGrid} from './HobbyPhotoGrid';
 import {HobbyPhotoForm} from './HobbyPhotoForm';
@@ -59,23 +59,30 @@ export const BaseHobbyPhotoScreen = (props: Props) => {
 
     return (
         <View style={styles.container}>
-            <ScrollView>
-                {props.grid === 'grouped' ? (
-                    <HobbyPhotoGroupedGrid
-                        photos={props.photos}
-                        onPress={photo => setExpandedPhoto(photo)}
-                        onEdit={photo => setActivePhotoState({ type: 'EDITING', photo })}
-                        onDelete={p => deleteHobbyPhoto({photoId: p.id, hobbyId: p.hobbyId})}
-                    />
-                ) : (
-                    <HobbyPhotoGrid
-                        photos={props.photos}
-                        onPress={photo => setExpandedPhoto(photo)}
-                        onEdit={photo => setActivePhotoState({ type: 'EDITING', photo })}
-                        onDelete={p => deleteHobbyPhoto({photoId: p.id, hobbyId: p.hobbyId})}
-                    />
-                )}
-            </ScrollView>
+            {props.photos.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Text variant="bodyLarge">You haven't added any photos yet.</Text>
+                    <Text variant="bodyMedium" style={styles.emptySubtext}>Tap + to add one.</Text>
+                </View>
+            ) : (
+                <ScrollView>
+                    {props.grid === 'grouped' ? (
+                        <HobbyPhotoGroupedGrid
+                            photos={props.photos}
+                            onPress={photo => setExpandedPhoto(photo)}
+                            onEdit={photo => setActivePhotoState({ type: 'EDITING', photo })}
+                            onDelete={p => deleteHobbyPhoto({photoId: p.id, hobbyId: p.hobbyId})}
+                        />
+                    ) : (
+                        <HobbyPhotoGrid
+                            photos={props.photos}
+                            onPress={photo => setExpandedPhoto(photo)}
+                            onEdit={photo => setActivePhotoState({ type: 'EDITING', photo })}
+                            onDelete={p => deleteHobbyPhoto({photoId: p.id, hobbyId: p.hobbyId})}
+                        />
+                    )}
+                </ScrollView>
+            )}
 
             <Portal>
                 <Modal
@@ -119,11 +126,18 @@ export const BaseHobbyPhotoScreen = (props: Props) => {
     );
 };
 
+// Standard tab bar height on Android. Photos screens are outside the tab group so
+// they have no tab bar — adding this offset makes the FAB sit at the same visual
+// height as FABs on tab screens (which are pushed up by the tab bar automatically).
+const TAB_BAR_HEIGHT = 49;
+
 const styles = StyleSheet.create({
     container: {flex: 1},
-    fab: {position: 'absolute', margin: spacing.lg, right: 0, bottom: 0},
+    emptyContainer: {flex: 1, marginTop: 100, alignItems: 'center', gap: spacing.sm},
+    emptySubtext: {opacity: 0.6, textAlign: 'center'},
+    fab: {position: 'absolute', right: spacing.lg, bottom: spacing.lg + TAB_BAR_HEIGHT},
     modal: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: 'white',
         margin: spacing.xl,
         borderRadius: 12,
         padding: spacing.xxl,

@@ -614,7 +614,9 @@ paths:
       tags:
         - Availabilities
       summary: Get current user's full availability schedule
-      description: Get all one-time availabilities, recurring availabilities, and recurrence exceptions
+      description: Get the lists of all of a user's availabilities from the previous 
+        day onwards (one day grace period), and the flattened intervals they are 
+        projected to from today onwards (no grace period).
       responses:
         '200':
           description: Availabilities retrieved successfully
@@ -1181,7 +1183,7 @@ components:
       properties:
         name:
           type: string
-          enum: [name, birthDate, genderMatched, location, publicContactInfo, hobbies, availabilities]
+          enum: [name, birthDate, genderMatched, location, contactInfo, hobbies, availabilities]
           example: hobbies
         reason:
           type: string
@@ -1216,7 +1218,7 @@ components:
           example: Woman
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
-        publicContactInfo:
+        contactInfo:
           type: string
           example: "@asmith123 on Instagram"
         showAge:
@@ -1262,7 +1264,7 @@ components:
           example: Love hiking and coffee!
         location:
           $ref: '#/components/schemas/GeoJsonPoint'
-        publicContactInfo:
+        contactInfo:
           type: string
           example: "@asmith123 on Instagram"
         profilePhotoKey:
@@ -1287,7 +1289,7 @@ components:
         - bio
         - locationPoint
         - locationApproximate
-        - publicContactInfo
+        - contactInfo
         - profilePhotoUrl
         - genderMatched
         - showAge
@@ -1319,7 +1321,7 @@ components:
         locationApproximate:
           type: string
           example: San Francisco, CA
-        publicContactInfo:
+        contactInfo:
           type: string
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
@@ -1392,7 +1394,7 @@ components:
         - genderDisplayed
         - bio
         - locationApproximate
-        - publicContactInfo
+        - contactInfo
         - profilePhotoUrl
         - hobbies
         - hobbyPhotos
@@ -1417,7 +1419,7 @@ components:
         locationApproximate:
           type: string
           example: San Francisco, CA
-        publicContactInfo:
+        contactInfo:
           type: string
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
@@ -1442,7 +1444,7 @@ components:
         - genderDisplayed
         - bio
         - locationApproximate
-        - publicContactInfo
+        - contactInfo
         - profilePhotoUrl
         - lastSessionTime
         - hobbies
@@ -1474,7 +1476,7 @@ components:
         locationApproximate:
           type: string
           example: San Francisco, CA
-        publicContactInfo:
+        contactInfo:
           type: string
           example: "@asmith123 on Instagram"
         profilePhotoUrl:
@@ -2174,7 +2176,7 @@ components:
           properties:
             minAge:
               type: integer
-              minimum: 13
+              minimum: 18
               example: 25
         - description: Maximum age
           required:

@@ -3,14 +3,10 @@ package io.github.csci499_group8.local_hobbies.backend.repository;
 import io.github.csci499_group8.local_hobbies.backend.dto.match.MatchSearchRequest;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
 import io.github.csci499_group8.local_hobbies.backend.model.User;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class UserSpecifications {
 

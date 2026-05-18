@@ -21,7 +21,7 @@ import {LocationPickerModal} from '@/src/components/location/LocationPickerModal
 import {LocationPicker} from '@/src/components/location/LocationPicker';
 import {useLocationField} from '@/src/hooks/useLocationField';
 import {DurationPicker, DurationValue} from '@/src/components/availability/DurationPicker';
-import {spacing, commonStyles, colors} from '@/src/theme';
+import {spacing, commonStyles, theme} from '@/src/theme';
 
 type FormValues = {
     exceptionDate: Date;
@@ -36,6 +36,7 @@ type Props =
         mode: 'create';
         recurringId: string;
         recurrings: RecurringAvailabilityResponse[]; //TODO: why plural?
+        allowedDates?: string[]; // ISO date strings (YYYY-MM-DD) - valid exception dates
         inlineLocation?: boolean;
         onSubmit: (req: AvailabilityExceptionCreationRequest) => Promise<void>;
         onDismiss: () => void;
@@ -61,6 +62,9 @@ export const AvailabilityExceptionForm = (props: Props) => {
             ? item.overrideLocation
             : undefined
     );
+    
+    // Limit date selection to 180 days in the future
+    const maxDate = DateTime.now().plus({days: 180}).toJSDate();
 
     const {control, handleSubmit, setValue, watch} = useForm<FormValues>({
         defaultValues: {
@@ -86,6 +90,11 @@ export const AvailabilityExceptionForm = (props: Props) => {
     const durationError = overrideDuration
         ? validateDuration(overrideDuration)
         : null;
+
+    // Check if selected date is in allowed dates (only for create mode)
+    const allowedDates = props.mode === 'create' ? props.allowedDates : undefined;
+    const selectedDateStr = DateTime.fromJSDate(exceptionDate).toISODate();
+    const isDateAllowed = !allowedDates || !selectedDateStr || allowedDates.includes(selectedDateStr);
 
     // Inline location picker replaces form content when active
     if (locationField.showPicker && props.inlineLocation) {
@@ -141,21 +150,32 @@ export const AvailabilityExceptionForm = (props: Props) => {
             {props.mode === 'create' && (
                 <View style={styles.field}>
                     <Text variant="labelLarge">Exception Date</Text>
+                    <Text variant="bodySmall" style={styles.hint}>
+                        Date must be a day the recurring availability falls on, and within the next 180 days.
+                    </Text>
                     <Button
                         mode="outlined"
                         icon="calendar"
                         onPress={() => setShowDatePicker(true)}
                         disabled={props.isSubmitting}
+                        style={commonStyles.lightBackground}
                     >
                         {DateTime.fromJSDate(exceptionDate).toLocaleString(
                             DateTime.DATE_MED_WITH_WEEKDAY
                         )}
                     </Button>
+                    {!isDateAllowed && (
+                        <Text variant="bodySmall" style={styles.errorText}>
+                            This date is not a valid occurrence of the recurring availability.
+                        </Text>
+                    )}
                     {showDatePicker && (
                         <DateTimePicker
                             value={exceptionDate}
                             mode="date"
                             display={DATE_PICKER_DISPLAY}
+                            minimumDate={new Date()}
+                            maximumDate={maxDate}
                             onChange={(_: DateTimePickerEvent, d?: Date) => {
                                 setShowDatePicker(Platform.OS === 'ios');
                                 if (d) setValue('exceptionDate', d);
@@ -206,6 +226,7 @@ export const AvailabilityExceptionForm = (props: Props) => {
                             onChangeText={onChange}
                             mode="outlined"
                             disabled={props.isSubmitting}
+                            style={commonStyles.lightBackground}
                         />
                     </View>
                 )}
@@ -226,16 +247,17 @@ export const AvailabilityExceptionForm = (props: Props) => {
                                     disabled={props.isSubmitting}
                                     style={styles.overrideButton}
                                 >
-                                    <Text>{DateTime.fromJSDate(overrideStartTime).toLocaleString(
+                                    {DateTime.fromJSDate(overrideStartTime).toLocaleString(
                                         DateTime.TIME_SIMPLE
-                                    )}</Text>
+                                    )}
                                 </Button>
                                 <Button
                                     mode="text"
+                                    compact
                                     onPress={() => setValue('overrideStartTime', null)}
                                     disabled={props.isSubmitting}
                                 >
-                                    <Text>Clear</Text>
+                                    Clear
                                 </Button>
                             </View>
                         ) : (
@@ -248,8 +270,9 @@ export const AvailabilityExceptionForm = (props: Props) => {
                                     setShowTimePicker(true);
                                 }}
                                 disabled={props.isSubmitting}
+                                style={commonStyles.lightBackground}
                             >
-                                <Text>Set override time</Text>
+                                Set override time
                             </Button>
                         )}
                         {showTimePicker && overrideStartTime && (
@@ -268,24 +291,28 @@ export const AvailabilityExceptionForm = (props: Props) => {
                     {/* Override duration */}
                     <View style={styles.field}>
                         <Text variant="labelLarge">Override Duration</Text>
+                        <Text variant="bodySmall" style={styles.hint}>
+                            Duration must be between 15 minutes and 7 days.
+                        </Text>
                         {overrideDuration ? (
-                            <>
-                                <DurationPicker
-                                    value={overrideDuration}
-                                    onChange={val => setValue('overrideDuration', val)}
-                                    error={durationError ?? undefined}
-                                    disabled={props.isSubmitting}
-                                />
+                            <View style={styles.overrideRow}>
+                                <View style={styles.overrideButtonNoBackground}>
+                                    <DurationPicker
+                                        value={overrideDuration}
+                                        onChange={val => setValue('overrideDuration', val)}
+                                        error={durationError ?? undefined}
+                                        disabled={props.isSubmitting}
+                                    />
+                                </View>
                                 <Button
                                     mode="text"
                                     compact
                                     onPress={() => setValue('overrideDuration', null)}
                                     disabled={props.isSubmitting}
-                                    style={styles.clearButton}
                                 >
-                                    <Text>Clear override duration</Text>
+                                    Clear
                                 </Button>
-                            </>
+                            </View>
                         ) : (
                             <Button
                                 mode="outlined"
@@ -294,8 +321,9 @@ export const AvailabilityExceptionForm = (props: Props) => {
                                     setValue('overrideDuration', {days: 0, hours: 2, minutes: 0})
                                 }
                                 disabled={props.isSubmitting}
+                                style={commonStyles.lightBackground}
                             >
-                                <Text>Set override duration</Text>
+                                Set override duration
                             </Button>
                         )}
                     </View>
@@ -312,14 +340,15 @@ export const AvailabilityExceptionForm = (props: Props) => {
                                     disabled={props.isSubmitting}
                                     style={styles.overrideButton}
                                 >
-                                    <Text>{locationField.address ?? 'Location set'}</Text>
+                                    {locationField.address ?? 'Location set'}
                                 </Button>
                                 <Button
                                     mode="text"
+                                    compact
                                     onPress={locationField.clearLocation}
                                     disabled={props.isSubmitting}
                                 >
-                                    <Text>Clear</Text>
+                                    Clear
                                 </Button>
                             </View>
                         ) : (
@@ -328,8 +357,9 @@ export const AvailabilityExceptionForm = (props: Props) => {
                                 icon="map-marker-plus-outline"
                                 onPress={locationField.openPicker}
                                 disabled={props.isSubmitting}
+                                style={commonStyles.lightBackground}
                             >
-                                <Text>Set override location</Text>
+                                Set override location
                             </Button>
                         )}
                     </View>
@@ -343,13 +373,13 @@ export const AvailabilityExceptionForm = (props: Props) => {
                     disabled={props.isSubmitting}
                     style={styles.footerButton}
                 >
-                    <Text>Cancel</Text>
+                    Cancel
                 </Button>
                 <Button
                     mode="contained"
                     onPress={handleSubmit(handleFormSubmit)}
                     loading={props.isSubmitting}
-                    disabled={props.isSubmitting || !!durationError}
+                    disabled={props.isSubmitting || !!durationError || !isDateAllowed}
                     style={styles.footerButton}
                 >
                     {props.mode === 'create' ? 'Add' : 'Save'}
@@ -379,13 +409,15 @@ const styles = StyleSheet.create({
         gap: spacing.md,
     },
     switchLabel: {flex: 1, gap: spacing.xs},
-    hint: {color: colors.textMuted},
+    hint: {color: theme.colors.tertiaryDark},
+    errorText: {color: theme.colors.error},
     overrideRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
     },
-    overrideButton: {flex: 1},
+    overrideButton: {flex: 1, ...commonStyles.lightBackground},
+    overrideButtonNoBackground: {flex: 1},
     clearButton: {alignSelf: 'flex-start'},
     footer: commonStyles.footer,
     footerButton: commonStyles.footerButton,

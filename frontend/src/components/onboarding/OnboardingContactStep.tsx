@@ -6,24 +6,24 @@ import {spacing, commonStyles} from '@/src/theme';
 
 interface Props {
     initialValue?: string;
-    onComplete: (publicContactInfo: string) => void;
+    onComplete: (contactInfo: string) => void;
     isSubmitting: boolean;
 }
 
 export const OnboardingContactStep = ({initialValue, onComplete, isSubmitting}: Props) => {
     const {control, handleSubmit, formState: {errors}} = useForm({
-        defaultValues: {publicContactInfo: initialValue ?? ''},
+        defaultValues: {contactInfo: initialValue ?? ''},
     });
 
     return (
         <View style={styles.container}>
             <Text variant="bodyMedium" style={styles.description}>
-                This is shown on your public profile so matched users can contact you.
+                This is shown only to users who have mutually matched wih you so that they can contact you.
                 Use a social handle, email, or phone number.
             </Text>
             <Controller
                 control={control}
-                name="publicContactInfo"
+                name="contactInfo"
                 rules={{required: 'Contact information is required'}}
                 render={({field: {onChange, onBlur, value}}) => (
                     <View style={styles.field}>
@@ -34,23 +34,23 @@ export const OnboardingContactStep = ({initialValue, onComplete, isSubmitting}: 
                             onBlur={onBlur}
                             mode="outlined"
                             disabled={isSubmitting}
-                            error={!!errors.publicContactInfo}
+                            error={!!errors.contactInfo}
                             returnKeyType="done"
-                            onSubmitEditing={handleSubmit(v => onComplete(v.publicContactInfo))}
+                            onSubmitEditing={handleSubmit(v => onComplete(v.contactInfo))}
                         />
-                        {errors.publicContactInfo && (
-                            <HelperText type="error">{errors.publicContactInfo.message}</HelperText>
+                        {errors.contactInfo && (
+                            <HelperText type="error">{errors.contactInfo.message}</HelperText>
                         )}
                     </View>
                 )}
             />
             <Button
                 mode="contained"
-                onPress={handleSubmit(v => onComplete(v.publicContactInfo))}
+                onPress={handleSubmit(v => onComplete(v.contactInfo))}
                 disabled={isSubmitting}
                 style={styles.button}
             >
-                <Text>Continue</Text>
+                Continue
             </Button>
         </View>
     );

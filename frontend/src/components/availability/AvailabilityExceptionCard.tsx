@@ -37,7 +37,7 @@ export const AvailabilityExceptionCard = ({item, onEdit, onDelete}: Props) => {
                     )}
                 </View>
                 <View style={styles.actions}>
-                    <IconButton icon="pencil" size={20} onPress={onEdit} />
+                    <IconButton icon="pencil" size={20} iconColor={theme.colors.primary} onPress={onEdit} />
                     <IconButton icon="delete" size={20} iconColor={theme.colors.error} onPress={onDelete} />
                 </View>
             </Card.Content>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     content: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
     info: {flex: 1, gap: 4},
     sub: {opacity: 0.6},
-    chip: {alignSelf: 'flex-start', backgroundColor: theme.colors.surfaceInput},
+    chip: {alignSelf: 'flex-start', backgroundColor: theme.colors.tertiary},
     cancelledChip: {backgroundColor: theme.colors.cancelled},
     actions: {flexDirection: 'row'},
 });

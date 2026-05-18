@@ -10,7 +10,7 @@ import {SavedMatchCard} from '@/src/components/match/SavedMatchCard';
 import {SavedMatchForm} from '@/src/components/match/SavedMatchForm';
 import {SavedMatchResponse} from '@/src/types/match';
 import {useSavedMatchActions} from "@/src/hooks/useSavedMatchActions";
-import {spacing} from '@/src/theme';
+import {spacing, theme} from '@/src/theme';
 
 type ActiveMatchState =
     | {type: 'CLOSED'}
@@ -44,16 +44,13 @@ export default function SavedMatchesScreen() {
                 <Appbar.Content title="Saved Matches" />
                 <Button
                     mode="outlined"
-                    textColor="#fff"
+                    compact
+                    textColor={theme.colors.primary}
                     onPress={() => router.push('/mutual-matches')}
                     style={styles.appbarButton}
                 >
-                    <Text>Mutual Matches</Text>
+                    Mutual Matches
                 </Button>
-                {/* <Appbar.Action
-                    icon="bookmark-check" //handshake?
-                    onPress={() => router.push('/mutual-matches')}
-                /> */}
             </Appbar.Header>
 
             <ScrollView contentContainerStyle={styles.list}>
@@ -103,11 +100,11 @@ export default function SavedMatchesScreen() {
 }
 
 const styles = StyleSheet.create({
-    screen: {flex: 1, backgroundColor: '#f8f9fa'},
+    screen: {flex: 1},
     centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
     list: {padding: 16, paddingBottom: 100},
     emptyContainer: {marginTop: 100, alignItems: 'center', gap: 12},
     emptySubtext: {opacity: 0.6, textAlign: 'center'},
-    appbarButton: {marginRight: spacing.sm},
+    appbarButton: {paddingHorizontal: spacing.xs, marginRight: spacing.sm, backgroundColor: theme.colors.overlapping, borderColor: theme.colors.primary, borderWidth: 2},
     modal: {backgroundColor: 'white', margin: 24, borderRadius: 12, padding: 24},
 });

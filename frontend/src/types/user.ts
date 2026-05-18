@@ -18,7 +18,7 @@ export enum OnboardingSectionName {
     Name = 'name',
     BirthDate = 'birthDate',
     Location = 'location',
-    PublicContactInfo = 'publicContactInfo',
+    ContactInfo = 'contactInfo',
     GenderMatched = 'genderMatched',
     ShowAge = 'showAge',
     ShowGenderDisplayed = 'showGenderDisplayed',
@@ -52,7 +52,7 @@ export interface UserOnboardingRequest {
     /** ISO 8601 date (YYYY-MM-DD) */
     birthDate?: string;
     location?: GeoJsonPoint;
-    publicContactInfo?: string;
+    contactInfo?: string;
     genderMatched?: UserGenderMatched;
     showAge?: boolean;
     showGenderDisplayed?: boolean;
@@ -72,7 +72,7 @@ export interface UserUpdateRequest {
     genderDisplayed?: string | null;
     bio?: string | null;
     location?: GeoJsonPoint;
-    publicContactInfo?: string;
+    contactInfo?: string;
     /** Key for cloud storage, null if removing */
     profilePhotoKey?: string | null;
     genderMatched?: UserGenderMatched;
@@ -90,7 +90,7 @@ export interface UserResponse {
     bio: string | null;
     locationPoint: GeoJsonPoint;
     locationApproximate: string;
-    publicContactInfo: string;
+    contactInfo: string;
     profilePhotoUrl: string | null;
     genderMatched: UserGenderMatched;
     showAge: boolean;
@@ -109,7 +109,7 @@ export interface CurrentUserProfileResponse {
     genderDisplayed: string | null;
     bio: string | null;
     locationApproximate: string;
-    publicContactInfo: string;
+    contactInfo: string;
     profilePhotoUrl: string | null;
     hobbies: HobbyResponse[];
     hobbyPhotos: HobbyPhotoResponse[];
@@ -122,13 +122,15 @@ export interface OtherUserProfileResponse {
     genderDisplayed: string | null;
     bio: string | null;
     locationApproximate: string;
-    publicContactInfo: string;
+    /** Null if not a mutual match */
+    contactInfo: string | null;
     profilePhotoUrl: string | null;
     /** ISO 8601 UTC timestamp */
     lastSessionTime: string;
     hobbies: HobbyResponse[];
     hobbyPhotos: HobbyPhotoResponse[];
     isSavedMatch: boolean;
+    isMutualMatch: boolean;
     overlappingHobbies: HobbyOverlapResponse[];
     overlappingAvailabilities: AvailabilityOverlapResponse[];
 }

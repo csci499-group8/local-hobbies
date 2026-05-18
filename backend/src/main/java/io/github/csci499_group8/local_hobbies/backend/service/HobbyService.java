@@ -7,6 +7,7 @@ import io.github.csci499_group8.local_hobbies.backend.exception.ResourceNotFound
 import io.github.csci499_group8.local_hobbies.backend.mapper.HobbyMapper;
 import io.github.csci499_group8.local_hobbies.backend.model.Hobby;
 import io.github.csci499_group8.local_hobbies.backend.model.HobbyPhoto;
+import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyExperienceLevel;
 import io.github.csci499_group8.local_hobbies.backend.model.enums.HobbyName;
 import io.github.csci499_group8.local_hobbies.backend.repository.GlobalHobbyRepository;
 import io.github.csci499_group8.local_hobbies.backend.repository.HobbyPhotoRepository;
@@ -196,6 +197,18 @@ public class HobbyService {
         return mapBatchPhotosToPhotoResponses(hobbyPhotoRepository.findAllByUserId(userId));
     }
 
+    /**
+     * Return a map of userId to HobbyExperienceLevel for the given candidates and hobby.
+     * Candidates without the hobby are absent from the map.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, HobbyExperienceLevel> getExperienceLevelsOfMatchCandidates(List<UUID> candidateIds,
+                                                                                HobbyName hobbyName) {
+        if (candidateIds.isEmpty()) return Collections.emptyMap();
+
+        return hobbyRepository.fetchExperienceLevels(candidateIds, hobbyName);
+    }
+
     // --- private helper methods ---
 
     /**
@@ -203,6 +216,7 @@ public class HobbyService {
      * requests.
      * @throws ResourceNotFoundException if hobby does not exist or request is unauthorized
      */
+    @Transactional(readOnly = true)
     protected Hobby findHobbyByUserIdAndId(UUID userId, UUID hobbyId) {
         Hobby hobby = hobbyRepository.findById(hobbyId).orElseThrow(
                 () -> new ResourceNotFoundException("Hobby not found with ID: " + hobbyId)
@@ -224,6 +238,7 @@ public class HobbyService {
      * @throws ResourceNotFoundException if hobby photo does not exist or request
      *         is unauthorized
      */
+    @Transactional(readOnly = true)
     protected HobbyPhoto findHobbyPhotoByUserIdAndId(UUID userId, UUID photoId) {
         HobbyPhoto photo = hobbyPhotoRepository.findById(photoId).orElseThrow(
                 () -> new ResourceNotFoundException("Hobby photo not found with ID: " + photoId)

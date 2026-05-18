@@ -33,13 +33,13 @@ export const MatchSearchResultCard = ({result, onSave, isSaved}: Props) => {
 
                 {/* TODO: styling? icon? */}
                 {result.hasSavedCurrentUser && (
-                    <Chip compact icon="bookmark-check" style={styles.distanceChip}>
-                        <Text>This user has already saved you!</Text>
+                    <Chip compact icon="bookmark-check" style={styles.mutualChip}>
+                        This user has already saved you!
                     </Chip>
                 )}
 
-                <Chip compact icon="map-marker" style={styles.distanceChip}>
-                    <Text>{distanceLabel}</Text>
+                <Chip compact icon="map-marker" style={styles.distanceChip} textStyle={{color: theme.colors.primary}}>
+                    {distanceLabel}
                 </Chip>
 
                 {/* Collapsible availability — avoids massive cards when
@@ -53,10 +53,11 @@ export const MatchSearchResultCard = ({result, onSave, isSaved}: Props) => {
                             onPress={() => setShowAvailability(prev => !prev)}
                             style={styles.availabilityToggle}
                         >
-                            {showAvailability ? 'Hide when you\'re both free' : 'Show when you\'re both free'}
+                            {showAvailability ? 'Hide when you\'re both free' : 'Show when you\'re both free (next 30 days)'}
                         </Button>
                         {showAvailability && (
-                            <View style={styles.calendarContainer}>
+                            <View>
+                            {/*<View style={styles.calendarContainer}>*/}
                                 <AvailabilityCalendar
                                     mode="overlap"
                                     intervals={result.overlappingAvailabilities}
@@ -68,22 +69,30 @@ export const MatchSearchResultCard = ({result, onSave, isSaved}: Props) => {
 
                 <View style={styles.cardActions}>
                     <Button
-                        mode="outlined"
+                        mode="contained"
                         icon="account"
                         onPress={() => router.push({
                             pathname: '/[userId]',
                             params: {userId: result.matchedUser.id},
                         })}
                         style={styles.actionButton}
+                        textColor={theme.colors.onPrimary}
                     >
-                        <Text>View Profile</Text>
+                        View Profile
                     </Button>
                     <Button
                         mode={isSaved ? 'outlined' : 'contained'}
                         icon={isSaved ? 'bookmark' : 'bookmark-outline'} //bookmark-check + bookmark-plus?
                         onPress={onSave}
                         disabled={isSaved}
-                        style={styles.actionButton}
+                        style={{
+                            flex: 1,
+                            backgroundColor: isSaved ? theme.colors.surfaceVariant : theme.colors.primary,
+                            borderWidth: isSaved ? 1 : 0,
+                            borderColor: theme.colors.surface,
+                        }}
+                        // textColor is overridden by Paper's disabled theming; labelStyle bypasses it
+                        labelStyle={isSaved ? {color: theme.colors.surface} : {color: theme.colors.onPrimary}}
                     >
                         {isSaved ? 'Saved' : 'Save Match'}
                     </Button>
@@ -97,9 +106,9 @@ export const MatchSearchResultCard = ({result, onSave, isSaved}: Props) => {
 const styles = StyleSheet.create({
     card: {marginBottom: spacing.md, ...commonStyles.card},
     content: {gap: spacing.md},
-    distanceChip: {alignSelf: 'flex-start'},
+    mutualChip: {alignSelf: 'flex-start', backgroundColor: theme.colors.tertiary},
+    distanceChip: {alignSelf: 'flex-start', backgroundColor: theme.colors.tertiaryContainer, borderColor: theme.colors.tertiary},
     availabilityToggle: {alignSelf: 'flex-start'},
-    calendarContainer: {height: 300},
     cardActions: {flexDirection: 'row', gap: spacing.sm},
-    actionButton: {flex: 1},
+    actionButton: {flex: 1, backgroundColor: theme.colors.primary},
 });

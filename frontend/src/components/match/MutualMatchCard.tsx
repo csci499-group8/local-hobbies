@@ -6,7 +6,6 @@ import React from 'react';
 import {DateTime} from 'luxon';
 import {MutualMatchResponse} from '@/src/types/match';
 import {BaseMatchCard} from './BaseMatchCard';
-//TODO: no style?
 
 interface Props {
     match: MutualMatchResponse;
@@ -20,6 +19,7 @@ export const MutualMatchCard = ({match, onEditNotes, onDelete}: Props) => (
         overlappingHobbies={match.overlappingHobbies}
         notes={match.notes}
         timestampLabel={`Matched since ${DateTime.fromISO(match.mutualMatchTime).toLocaleString(DateTime.DATE_MED)}`}
+        contactInfo={match.contactInfo}
         onEditNotes={onEditNotes}
         onDelete={onDelete}
     />

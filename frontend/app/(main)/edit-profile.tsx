@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { ScrollView, StyleSheet, View, Alert } from 'react-native';
 import { ActivityIndicator, Text, Appbar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -9,17 +9,20 @@ import { UserProfileUpdateRequest } from '@/src/types/ui/user';
 export default function EditProfileScreen() {
     const router = useRouter();
     const { user, userLoading, userError, updateUserProfile } = useUser();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleUpdate = async (data: UserProfileUpdateRequest) => {
+        setIsSubmitting(true);
         try {
             await updateUserProfile(data);
             router.back();
         } catch (e: unknown) {
-            // Providing user-facing feedback instead of just a console log
             Alert.alert(
                 'Update Failed',
                 e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.'
             );
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -55,6 +58,7 @@ export default function EditProfileScreen() {
                     initialData={user}
                     onSubmit={handleUpdate}
                     isLoading={userLoading}
+                    isSubmitting={isSubmitting}
                 />
             </ScrollView>
         </View>
@@ -63,6 +67,6 @@ export default function EditProfileScreen() {
 
 const styles = StyleSheet.create({
     screen: { flex: 1 },
-    container: { flex: 1, backgroundColor: '#fff' },
+    container: { flex: 1},
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' }
 });

@@ -129,9 +129,9 @@ public class UserService {
             incompleteSections.add(new UserOnboardingIncompleteSection(
                 SectionName.location, IncompleteReason.NO_VALUE));
         }
-        if (user.getPublicContactInfo() == null) {
+        if (user.getContactInfo() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
-                SectionName.publicContactInfo, IncompleteReason.NO_VALUE));
+                SectionName.contactInfo, IncompleteReason.NO_VALUE));
         }
         if (user.getGenderMatched() == null) {
             incompleteSections.add(new UserOnboardingIncompleteSection(
@@ -175,7 +175,12 @@ public class UserService {
         }
 
         try {
-            if (request.profilePhotoKey() != null) { //frontend has already uploaded new photo
+            boolean newKeyProvided = request.profilePhotoKey() != null
+                    && request.profilePhotoKey().isPresent();
+
+            if (newKeyProvided
+                    && user.getProfilePhotoKey() != null //if a profile photo existed before update
+                    && !user.getProfilePhotoKey().equals(request.profilePhotoKey().get())) { //if new and old photo keys are not equal
                 storageService.deleteObjects(List.of(user.getProfilePhotoKey()));
             }
         } catch (Exception e) {
@@ -198,7 +203,9 @@ public class UserService {
         userRepository.deleteById(userId);
 
         try {
-            storageService.deleteObjects(List.of(profilePhotoKey));
+            if (profilePhotoKey != null) {
+                storageService.deleteObjects(List.of(profilePhotoKey));
+            }
         } catch (Exception e) {
             log.error("Failed to delete profile photo with key: {}", profilePhotoKey, e);
         }
@@ -253,14 +260,16 @@ public class UserService {
         boolean isSavedMatch = savedMatchRepository.existsByUserIdAndSavedUserIdAndStatus(currentUserId,
                                                                                           otherUserId,
                                                                                           MatchStatus.ACTIVE);
+        boolean isMutualMatch = savedMatchRepository.isMutualMatch(currentUserId, otherUserId);
+        
         List<HobbyOverlapResponse> overlappingHobbies =
             hobbyService.getOverlappingHobbies(currentUserId, otherUserId);
         List<AvailabilityOverlapResponse> overlappingAvailabilities =
             availabilityService.getOverlappingAvailabilities(currentUserId, otherUserId);
 
         return userMapper.toOtherProfileResponse(otherUser, otherUserProfilePhotoUrl, otherUserHobbies,
-                                                 otherUserHobbyPhotos, isSavedMatch, overlappingHobbies,
-                                                 overlappingAvailabilities);
+                                                 otherUserHobbyPhotos, isSavedMatch, isMutualMatch,
+                                                 overlappingHobbies, overlappingAvailabilities);
     }
 
     // --- methods called by services ---
@@ -290,7 +299,7 @@ public class UserService {
         return user.getName() != null && !user.getName().isBlank()
                 && user.getBirthDate() != null
                 && user.getLocationPoint() != null
-                && user.getPublicContactInfo() != null && !user.getPublicContactInfo().isBlank()
+                && user.getContactInfo() != null && !user.getContactInfo().isBlank()
                 && user.getGenderMatched() != null
                 && user.getShowAge() != null
                 && user.getShowGenderDisplayed() != null

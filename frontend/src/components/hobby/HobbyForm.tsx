@@ -1,8 +1,7 @@
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {Button, Text, SegmentedButtons, HelperText} from 'react-native-paper';
 import {useForm, Controller} from 'react-hook-form';
-import {Picker} from '@react-native-picker/picker';
 import {
     HobbyExperienceLevel,
     GlobalHobbyResponse,
@@ -11,6 +10,7 @@ import {
     HobbyUpdateRequest,
 } from '@/src/types/hobby';
 import {spacing, commonStyles} from '@/src/theme';
+import {SearchablePickerModal} from '@/src/components/common/SearchablePickerModal';
 
 type FormValues = {
     name: string;
@@ -23,18 +23,35 @@ interface Props {
     onSubmit: (request: HobbyCreationRequest | HobbyUpdateRequest) => Promise<void>;
     onDismiss: () => void;
     isSubmitting: boolean;
+    /** Hobby names already selected elsewhere — excluded from the picker. */
+    excludeNames?: string[];
 }
 
-export const HobbyForm = ({hobby, globalHobbies, onSubmit, onDismiss, isSubmitting}: Props) => {
+export const HobbyForm = ({hobby, globalHobbies, onSubmit, onDismiss, isSubmitting, excludeNames}: Props) => {
     const isEditing = !!hobby;
-    //TODO: if below didn't fix, do "const [selectedHobby, setSelectedHobby] = useState(value ?? '');" and change Picker selectedValue = {selectedHobby}
+    const [hobbyPickerVisible, setHobbyPickerVisible] = useState(false);
 
-    const {control, handleSubmit, formState: {errors}} = useForm<FormValues>({
+    const {control, handleSubmit, watch, setValue, formState: {errors}} = useForm<FormValues>({
         defaultValues: {
             name: hobby?.name ?? '',
             experienceLevel: hobby?.experienceLevel ?? HobbyExperienceLevel.Beginner,
         },
     });
+
+    const hobbyItems = useMemo(() =>
+        globalHobbies
+            .filter(h => !excludeNames?.includes(h.name))
+            .map(h => ({
+                label: `${h.name} (${h.category})`,
+                value: h.name,
+            })),
+        [globalHobbies, excludeNames]
+    );
+
+    const nameValue = watch('name');
+    const selectedHobbyLabel = nameValue
+        ? hobbyItems.find(i => i.value === nameValue)?.label ?? nameValue
+        : 'Select a hobby...';
 
     const handleFormSubmit = (values: FormValues) => {
         if (isEditing) {
@@ -56,31 +73,35 @@ export const HobbyForm = ({hobby, globalHobbies, onSubmit, onDismiss, isSubmitti
                     control={control}
                     name="name"
                     rules={{required: 'Please select a hobby'}}
-                    render={({field: {onChange, value}}) => (
+                    render={() => (
                         <View style={styles.field}>
                             <Text variant="labelLarge">Select Hobby</Text>
-                            <View style={styles.pickerBorder}>
-                                <Picker
-                                    selectedValue={value}
-                                    onValueChange={(itemValue) => {
-                                        onChange(itemValue); //TODO: revert if did not fix
-                                    }}
-                                >
-                                    <Picker.Item label="Select a hobby..." value="" />
-                                    {globalHobbies.map(h => (
-                                        <Picker.Item
-                                            key={h.name}
-                                            label={`${h.name} (${h.category})`}
-                                            value={h.name}
-                                        />
-                                    ))}
-                                </Picker>
-                            </View>
+                            <Button
+                                mode="outlined"
+                                icon="chevron-down"
+                                onPress={() => setHobbyPickerVisible(true)}
+                                disabled={isSubmitting}
+                                contentStyle={styles.pickerButtonContent}
+                            >
+                                {selectedHobbyLabel}
+                            </Button>
                             {errors.name && (
                                 <HelperText type="error">{errors.name.message}</HelperText>
                             )}
                         </View>
                     )}
+                />
+            )}
+
+            {/* Hobby search modal */}
+            {!isEditing && (
+                <SearchablePickerModal
+                    visible={hobbyPickerVisible}
+                    title="Select Hobby"
+                    items={hobbyItems}
+                    selectedValue={nameValue}
+                    onSelect={(val) => setValue('name', val, {shouldValidate: true})}
+                    onDismiss={() => setHobbyPickerVisible(false)}
                 />
             )}
 
@@ -112,7 +133,7 @@ export const HobbyForm = ({hobby, globalHobbies, onSubmit, onDismiss, isSubmitti
                     disabled={isSubmitting}
                     style={styles.footerButton}
                 >
-                    <Text>Cancel</Text>
+                    Cancel
                 </Button>
                 <Button
                     mode="contained"
@@ -132,7 +153,7 @@ const styles = StyleSheet.create({
     container: {gap: spacing.xl},
     title: commonStyles.sectionTitle,
     field: {gap: spacing.sm},
-    pickerBorder: commonStyles.pickerBorder,
+    pickerButtonContent: {flexDirection: 'row-reverse'},
     footer: commonStyles.footer,
     footerButton: commonStyles.footerButton,
 });

@@ -60,6 +60,7 @@ public abstract class MatchMapper {
     @Mapping(target = "savedUser", expression = "java(mapToMatchedUser(projection.getSavedUser(), savedUserProfilePhotoUrl))")
     @Mapping(target = "notes", source = "projection.currentUserSavedMatch.notes")
     @Mapping(target = "mutualMatchTime", source = "projection.mutualMatchTime")
+    @Mapping(target = "contactInfo", source = "projection.savedUser.contactInfo")
     public abstract MutualMatchResponse toMutualMatchResponse(MutualMatchProjection projection,
                                                               String savedUserProfilePhotoUrl,
                                                               List<HobbyOverlapResponse> overlappingHobbies);

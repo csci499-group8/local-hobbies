@@ -1,8 +1,7 @@
-// components/availability/DurationPicker.tsx
 // Allows selection of any duration in [15 minutes, 7 days) using
 // separate days, hours, and minutes fields.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {TextInput, HelperText} from 'react-native-paper';
 import {colors, spacing} from '@/src/theme';
@@ -23,9 +22,19 @@ interface Props {
 const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
 
+const FIELD_CLAMP_MESSAGES: Record<keyof DurationValue, string> = {
+    days: 'Days must be an integer between 0 and 6',
+    hours: 'Hours must be an integer between 0 and 23',
+    minutes: 'Minutes must be an integer between 0 and 59',
+};
+
 export const DurationPicker = ({value, onChange, error, disabled}: Props) => {
+    const [clampWarning, setClampWarning] = useState<string | null>(null);
+
     const handleUpdate = (part: keyof DurationValue, text: string, max: number) => {
-        const num = text === '' ? 0 : clamp(parseInt(text, 10) || 0, 0, max);
+        const raw = parseInt(text, 10);
+        const num = isNaN(raw) ? 0 : clamp(raw, 0, max);
+        setClampWarning(text !== '' && (isNaN(raw) || raw !== num) ? FIELD_CLAMP_MESSAGES[part] : null);
         onChange({ ...value, [part]: num });
     };
 
@@ -42,7 +51,6 @@ export const DurationPicker = ({value, onChange, error, disabled}: Props) => {
                     disabled={disabled}
                     error={!!error}
                     style={styles.input}
-                    right={<TextInput.Affix text="d" />}
                 />
 
                 <TextInput
@@ -55,11 +63,10 @@ export const DurationPicker = ({value, onChange, error, disabled}: Props) => {
                     disabled={disabled}
                     error={!!error}
                     style={styles.input}
-                    right={<TextInput.Affix text="h" />}
                 />
 
                 <TextInput
-                    label="Minutes"
+                    label="Mins"
                     value={value.minutes === 0 ? '' : value.minutes.toString()}
                     placeholder="0"
                     onChangeText={(t) => handleUpdate('minutes', t, 59)}
@@ -68,12 +75,11 @@ export const DurationPicker = ({value, onChange, error, disabled}: Props) => {
                     disabled={disabled}
                     error={!!error}
                     style={styles.input}
-                    right={<TextInput.Affix text="m" />}
                 />
             </View>
 
-            {error && (
-                <HelperText type="error">{error}</HelperText>
+            {(error || clampWarning) && (
+                <HelperText type="error">{error ?? clampWarning}</HelperText>
             )}
         </View>
     );

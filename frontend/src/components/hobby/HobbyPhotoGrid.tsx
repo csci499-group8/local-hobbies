@@ -57,5 +57,5 @@ export const HobbyPhotoGrid = ({photos, onPress, onEdit, onDelete}: Props) => {
 };
 
 const styles = StyleSheet.create({
-    grid: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
+    grid: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, padding: spacing.lg},
 });

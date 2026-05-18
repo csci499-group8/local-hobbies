@@ -28,9 +28,10 @@ export const ProfileHobbies = ({hobbies, overlappingHobbyNames}: Props) => (
                                 //if overlaps, override chip style to make chip stand out
                                 isOverlapping && styles.overlappingChip,
                             ]}
-                            icon={isOverlapping ? 'set-left-center' : undefined} //TODO: add "shared hobbies" label?
+                            icon={isOverlapping ? 'set-left-center' : undefined}
+                            textStyle={{color: isOverlapping ? 'black' : theme.colors.primary}}
                         >
-                            <Text>{hobby.name} · {hobby.experienceLevel}</Text>
+                            {hobby.name} · {hobby.experienceLevel}
                         </Chip>
                     );
                 })}
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
     section: commonStyles.section,
     sectionTitle: commonStyles.sectionTitle,
     chipContainer: commonStyles.chipRow,
-    chip: {backgroundColor: theme.colors.surfaceInput},
+    chip: {backgroundColor: theme.colors.tertiaryLight},
     overlappingChip: {backgroundColor: theme.colors.overlapping, borderWidth: 1.5, borderColor: theme.colors.primary,},
     emptyText: commonStyles.mutedText,
 });

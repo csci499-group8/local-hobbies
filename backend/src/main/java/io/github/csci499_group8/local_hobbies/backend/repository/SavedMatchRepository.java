@@ -24,6 +24,8 @@ public interface SavedMatchRepository extends JpaRepository<SavedMatch, UUID> {
     //so it just returns SavedMatch
     Optional<SavedMatch> findByIdAndStatus(UUID matchId, MatchStatus status);
 
+    Optional<SavedMatch> findByUserIdAndSavedUserId(UUID userId, UUID savedUserId);
+
     Integer countBySavedUserIdAndStatus(UUID userId, MatchStatus status);
 
     boolean existsByUserIdAndSavedUserIdAndStatus(UUID currentUserId,
@@ -74,5 +76,19 @@ public interface SavedMatchRepository extends JpaRepository<SavedMatch, UUID> {
     AND otherUserSave.status = io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus.ACTIVE
     """)
     int countMutualMatches(@Param("currentUserId") UUID currentUserId);
+
+    @Query("""
+    SELECT CASE WHEN COUNT(currentUserSave) > 0 THEN true ELSE false END
+    FROM SavedMatch currentUserSave
+    JOIN SavedMatch otherUserSave
+        ON currentUserSave.savedUserId = otherUserSave.userId
+        AND currentUserSave.userId = otherUserSave.savedUserId
+    WHERE currentUserSave.userId = :currentUserId
+    AND currentUserSave.savedUserId = :otherUserId
+    AND currentUserSave.status = io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus.ACTIVE
+    AND otherUserSave.status = io.github.csci499_group8.local_hobbies.backend.model.enums.MatchStatus.ACTIVE
+    """)
+    boolean isMutualMatch(@Param("currentUserId") UUID currentUserId,
+                          @Param("otherUserId") UUID otherUserId);
 
 }

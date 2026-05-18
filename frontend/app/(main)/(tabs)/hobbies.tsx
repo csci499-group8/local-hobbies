@@ -7,7 +7,7 @@ import {HobbyForm} from '@/src/components/hobby/HobbyForm';
 import {HobbyResponse, HobbyCreationRequest, HobbyUpdateRequest} from '@/src/types/hobby';
 import {router} from "expo-router";
 import {useGlobalHobby} from "@/src/hooks/useGlobalHobby";
-import {commonStyles, spacing} from '@/src/theme';
+import {commonStyles, spacing, theme} from '@/src/theme';
 
 type ActiveHobbyState =
     | {type: 'CLOSED'}
@@ -94,11 +94,12 @@ export default function HobbiesScreen() {
                 <Appbar.Content title="Hobbies" />
                 <Button
                     mode="outlined"
-                    textColor="#fff"
+                    compact
+                    textColor={theme.colors.primary}
                     onPress={() => router.push('/hobbies/photos')}
                     style={styles.appbarButton}
                 >
-                    <Text>All Photos</Text>
+                    All Photos
                 </Button>
                 {/* <Appbar.Action
                     icon="camera-burst"
@@ -139,6 +140,10 @@ export default function HobbiesScreen() {
                         onSubmit={handleFormSubmit}
                         onDismiss={() => setActiveHobbyState({type: 'CLOSED'})}
                         isSubmitting={isSubmitting}
+                        // In create mode, exclude names already owned so the same
+                        // hobby cannot be added twice. In edit mode the name picker
+                        // is hidden, so this prop has no effect.
+                        excludeNames={activeHobbyState.type === 'CREATING' ? hobbies.map(h => h.name) : []}
                     />
                 </Modal>
             </Portal>
@@ -154,12 +159,12 @@ export default function HobbiesScreen() {
 }
 
 const styles = StyleSheet.create({
-    screen: {flex: 1, backgroundColor: '#f8f9fa'},
+    screen: {flex: 1},
     centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
     list: {padding: 16, paddingBottom: 100},
     emptyContainer: {marginTop: 100, alignItems: 'center', gap: 8},
     emptySubtext: commonStyles.mutedText,
-    appbarButton: {marginRight: spacing.sm},
+    appbarButton: {paddingHorizontal: spacing.xs, marginRight: spacing.sm, backgroundColor: theme.colors.overlapping, borderColor: theme.colors.primary, borderWidth: 2},
     fab: {position: 'absolute', margin: 16, right: 0, bottom: 0},
     modal: {backgroundColor: 'white', margin: 24, borderRadius: 12, padding: 24},
 });

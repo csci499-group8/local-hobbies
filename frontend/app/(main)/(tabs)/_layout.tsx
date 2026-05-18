@@ -9,7 +9,11 @@ export default function TabsLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: theme.colors.primary,
+                tabBarActiveTintColor: theme.colors.primaryLight,
+                tabBarInactiveTintColor: theme.colors.primary,
+                tabBarStyle: {
+                    backgroundColor: theme.colors.surface,
+                },
             }}
         >
             <Tabs.Screen

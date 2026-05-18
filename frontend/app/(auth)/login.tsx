@@ -1,10 +1,11 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView} from 'react-native';
+import {View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, Image} from 'react-native';
 import {Text, TextInput, Button, HelperText} from 'react-native-paper';
 import {useForm, Controller} from 'react-hook-form';
 import {useRouter} from 'expo-router';
 import {useAuth} from '@/src/context/AuthContext';
 import {AuthLoginRequest} from '@/src/types/auth';
+import {theme} from "@/src/theme";
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -35,7 +36,7 @@ export default function LoginScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={styles.flex}
+            style={styles.screen}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <ScrollView
@@ -44,10 +45,12 @@ export default function LoginScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
+                    <Image
+                        source={require('@/assets/images/icon.png')}
+                        style={styles.icon}
+                        resizeMode="contain"
+                    />
                     <Text variant="headlineMedium" style={styles.title}>Welcome back</Text>
-                    <Text variant="bodyMedium" style={styles.subtitle}>
-                        Log in to find people who share your hobbies.
-                    </Text>
                 </View>
 
                 {/* Username */}
@@ -68,7 +71,10 @@ export default function LoginScreen() {
                                 disabled={isSubmitting}
                                 error={!!errors.username}
                                 returnKeyType="next"
-                                left={<TextInput.Icon icon="account" />}
+                                left={<TextInput.Icon
+                                    color={theme.colors.primary}
+                                    icon="account"
+                                />}
                             />
                             {errors.username && (
                                 <HelperText type="error">{errors.username.message}</HelperText>
@@ -97,9 +103,13 @@ export default function LoginScreen() {
                                 error={!!errors.password}
                                 returnKeyType="done"
                                 onSubmitEditing={handleSubmit(handleLogin)}
-                                left={<TextInput.Icon icon="lock" />}
+                                left={<TextInput.Icon
+                                    color={theme.colors.primary}
+                                    icon="lock"
+                                />}
                                 right={
                                     <TextInput.Icon
+                                        color={theme.colors.primary}
                                         icon={showPassword ? 'eye-off' : 'eye'}
                                         onPress={() => setShowPassword(prev => !prev)}
                                     />
@@ -120,7 +130,7 @@ export default function LoginScreen() {
                     disabled={isSubmitting}
                     style={styles.submitButton}
                 >
-                    <Text>Log In</Text>
+                    Log In
                 </Button>
 
                 {/* Sign up link */}
@@ -132,7 +142,7 @@ export default function LoginScreen() {
                         onPress={() => router.push('/signup')}
                         disabled={isSubmitting}
                     >
-                        <Text>Sign up</Text>
+                        <Text style={styles.signupText}>Sign up</Text>
                     </Button>
                 </View>
             </ScrollView>
@@ -141,16 +151,18 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    flex: {flex: 1},
+    screen: {flex: 1},
     container: {
         flexGrow: 1,
         justifyContent: 'center',
         padding: 24,
         gap: 12,
     },
-    header: {gap: 8, marginBottom: 8},
+    header: {gap: 8, marginBottom: 16, alignItems: 'center', marginTop: 32},
+    icon: {width: 120, height: 120, marginBottom: 16},
     title: {fontWeight: 'bold'},
-    subtitle: {opacity: 0.6},
+    // subtitle: {opacity: 0.6},
+    subtitle: {color: theme.colors.tertiaryDark},
     field: {gap: 4},
     submitButton: {marginTop: 8},
     signupRow: {
@@ -159,4 +171,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 8,
     },
+    signupText: {color: theme.colors.tertiaryDark}
 });

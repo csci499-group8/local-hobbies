@@ -17,7 +17,7 @@ public record UserResponse(
     String bio, //nullable
     @Valid @NotNull GeoJsonPoint locationPoint,
     @NotBlank String locationApproximate,
-    @NotBlank String publicContactInfo,
+    @NotBlank String contactInfo,
     String profilePhotoUrl, //nullable
     @NotNull UserGenderMatched genderMatched,
     @NotNull boolean showAge,

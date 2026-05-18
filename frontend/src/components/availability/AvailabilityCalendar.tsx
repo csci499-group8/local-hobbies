@@ -3,9 +3,9 @@ import {FlatList, Platform, StyleSheet, View} from 'react-native';
 import {Button, Divider, List, Modal, Portal, Surface, Text, useTheme} from 'react-native-paper';
 import MapView, {Marker} from 'react-native-maps';
 import {DateTime} from 'luxon';
-import {AvailabilityIntervalResponse, AvailabilityOverlapResponse} from '@/src/types/availability';
+import {AvailabilityType, AvailabilityIntervalResponse, AvailabilityOverlapResponse} from '@/src/types/availability';
 import {GeoJsonPoint} from '@/src/types/common';
-import {spacing, commonStyles, theme} from '@/src/theme';
+import {spacing, commonStyles, theme, colors} from '@/src/theme';
 
 // This component accepts either AvailabilityIntervalResponse (user's own schedule) or
 // AvailabilityOverlapResponse (user's overlap with another user) via a discriminated
@@ -21,6 +21,7 @@ interface DayEvent {
     start: string;
     end: string;
     label: string;
+    icon: string;
     location?: GeoJsonPoint;
 }
 
@@ -30,6 +31,13 @@ interface DayGroup {
     events: DayEvent[];
 }
 
+// Mapping from AvailabilityType to normalized interval icon
+const AVAILABILITY_TYPE_ICONS: Record<string, string> = {
+    [AvailabilityType.OneTimeAvailability]: 'calendar-week-begin',
+    [AvailabilityType.RecurringAvailability]: 'calendar-refresh',
+    [AvailabilityType.AvailabilityException]: 'calendar-remove',
+};
+
 // Intervals are normalized from API response types into a shared DayEvent shape
 // before any grouping or rendering occurs. This decouples the UI from the API.
 const normalizeIntervals = (props: Props): DayEvent[] => {
@@ -38,6 +46,7 @@ const normalizeIntervals = (props: Props): DayEvent[] => {
             start: i.start,
             end: i.end,
             label: i.sourceType,
+            icon: AVAILABILITY_TYPE_ICONS[i.sourceType] ?? 'calendar-clock',
             location: i.location,
         }));
     }
@@ -45,6 +54,7 @@ const normalizeIntervals = (props: Props): DayEvent[] => {
         start: i.start,
         end: i.end,
         label: `Approx. ${i.distanceKilometers.toFixed(1)} km away`,
+        icon: 'set-left-center',
     }));
 };
 
@@ -119,7 +129,9 @@ export const AvailabilityCalendar = (props: Props) => {
                     <React.Fragment key={`${item.date}-${index}`}>
                         <List.Item
                             title={`${DateTime.fromISO(event.start).toLocaleString(DateTime.TIME_SIMPLE)} – ${DateTime.fromISO(event.end).toLocaleString(DateTime.TIME_SIMPLE)}`}
+                            titleStyle={styles.intervalTitle}
                             description={event.label}
+                            descriptionStyle={styles.intervalLabel}
                             // 'Schedule' mode events are tappable if they carry a location
                             onPress={props.mode === 'schedule' && event.location
                                 ? () => setSelectedEvent(event)
@@ -128,16 +140,15 @@ export const AvailabilityCalendar = (props: Props) => {
                             left={p => (
                                 <List.Icon
                                     {...p}
-                                    icon={props.mode === 'overlap' ? 'set-left-center' : 'calendar-clock'}
-                                    color={props.mode === 'overlap' ? theme.colors.primary : theme.colors.secondary}
+                                    icon={event.icon}
+                                    color={theme.colors.primary}
                                 />
                             )}
                             // Chevron signals tappability in schedule mode
                             right={props.mode === 'schedule' && event.location
-                                ? p => <List.Icon {...p} icon="chevron-right" />
+                                ? p => <List.Icon {...p} icon="chevron-right" color={theme.colors.primary}/>
                                 : undefined
                             }
-                            titleStyle={styles.intervalTitle}
                         />
                         {index < item.events.length - 1 && <Divider />}
                     </React.Fragment>
@@ -154,7 +165,7 @@ export const AvailabilityCalendar = (props: Props) => {
                     keyExtractor={item => item.date}
                     renderItem={renderGroup}
                     contentContainerStyle={styles.list}
-                    nestedScrollEnabled={true} //TODO: non-breaking?
+                    nestedScrollEnabled={true}
                 />
             </View>
 
@@ -180,33 +191,34 @@ export const AvailabilityCalendar = (props: Props) => {
                                 {selectedEvent.label}
                             </Text>
 
-                            {/* GeoJSON coordinates are [longitude, latitude] */}
-                            <MapView
-                                provider={Platform.OS === 'android' ? 'google' : undefined}
-                                style={styles.map}
-                                initialRegion={{
-                                    latitude: selectedEvent.location.coordinates[1],
-                                    longitude: selectedEvent.location.coordinates[0],
-                                    latitudeDelta: 0.01,  // ~1km neighborhood zoom
-                                    longitudeDelta: 0.01,
-                                }}
-                                scrollEnabled={false}
-                                zoomEnabled={false}
-                            >
-                                <Marker
-                                    coordinate={{
+                            <View>
+                                {/* GeoJSON coordinates are [longitude, latitude] */}
+                                <MapView
+                                    provider={Platform.OS === 'android' ? 'google' : undefined}
+                                    style={styles.map}
+                                    initialRegion={{
                                         latitude: selectedEvent.location.coordinates[1],
                                         longitude: selectedEvent.location.coordinates[0],
+                                        latitudeDelta: 0.02,  // ~2km zoom — shows street names
+                                        longitudeDelta: 0.02,
                                     }}
+                                    scrollEnabled={false}
+                                    zoomEnabled={false}
                                 />
-                            </MapView>
+                                
+                                {/* Absolutely positioned pin overlay - same approach as LocationPicker */}
+                                <View style={styles.pinOverlay} pointerEvents="none">
+                                    <View style={styles.markerHead} />
+                                    <View style={styles.markerStem} />
+                                </View>
+                            </View>
 
                             <Button
                                 mode="contained"
                                 onPress={() => setSelectedEvent(null)}
                                 style={styles.closeButton}
                             >
-                                <Text>Close</Text>
+                                Close
                             </Button>
                         </>
                     )}
@@ -219,6 +231,10 @@ export const AvailabilityCalendar = (props: Props) => {
 export const MIN_CALENDAR_HEIGHT = 120;
 export const MAX_CALENDAR_HEIGHT = 400;
 
+const MAP_HEIGHT = 300;
+const PIN_HEAD_SIZE = 24;
+const PIN_STEM_HEIGHT = 16;
+
 const styles = StyleSheet.create({
     list: {padding: spacing.lg, gap: spacing.xl},
     emptyContainer: {padding: 40, alignItems: 'center', height: MIN_CALENDAR_HEIGHT},
@@ -228,16 +244,36 @@ const styles = StyleSheet.create({
         paddingLeft: spacing.sm,
         ...commonStyles.upperLabel,
     },
-    surface: {borderRadius: 12, overflow: 'hidden'},
+    surface: {borderRadius: 12, overflow: 'hidden', backgroundColor: theme.colors.tertiaryContainer, borderColor: theme.colors.tertiary},
     intervalTitle: {fontWeight: 'bold'},
+    intervalLabel: {color: theme.colors.primary, opacity: 0.6},
     modal: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: 'white',
         margin: spacing.xxl,
         borderRadius: 12,
         overflow: 'hidden',
     },
     modalTitle: {fontWeight: 'bold', padding: spacing.lg, paddingBottom: spacing.xs},
     modalSubtitle: {opacity: 0.6, paddingHorizontal: spacing.lg, paddingBottom: spacing.md},
-    map: {width: '100%', height: 300},
+    map: {width: '100%', height: MAP_HEIGHT},
+    pinOverlay: {
+        position: 'absolute',
+        top: MAP_HEIGHT / 2 - PIN_HEAD_SIZE - PIN_STEM_HEIGHT,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+    },
     closeButton: {margin: spacing.lg},
+    markerHead: {
+        width: PIN_HEAD_SIZE,
+        height: PIN_HEAD_SIZE,
+        borderRadius: PIN_HEAD_SIZE / 2,
+        backgroundColor: colors.pin,
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    markerStem: {width: 2, height: PIN_STEM_HEIGHT, backgroundColor: colors.pin},
 });

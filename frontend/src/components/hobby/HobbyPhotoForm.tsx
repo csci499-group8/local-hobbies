@@ -1,15 +1,15 @@
 // Form handling photo creation and caption editing (caption only; photo cannot
 // be changed after upload).
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {Button, Text, TextInput, HelperText} from 'react-native-paper';
 import {useForm, Controller} from 'react-hook-form';
 import * as ImagePicker from 'expo-image-picker';
 import {Image} from 'expo-image';
-import {Picker} from '@react-native-picker/picker';
 import {HobbyPhotoUpdateRequest, HobbyResponse} from '@/src/types/hobby';
 import {spacing, commonStyles} from '@/src/theme';
+import {SearchablePickerModal} from '@/src/components/common/SearchablePickerModal';
 
 type FormValues = {
     hobbyId: string;
@@ -39,13 +39,29 @@ type Props =
 
 export const HobbyPhotoForm = (props: Props) => {
     const [photoAsset, setPhotoAsset] = useState<{uri: string; name: string; type: string} | null>(null);
+    const [hobbyPickerVisible, setHobbyPickerVisible] = useState(false);
 
-    const {control, handleSubmit, setError, formState: {errors}} = useForm<FormValues>({
+    const {control, handleSubmit, setError, watch, setValue, formState: {errors}} = useForm<FormValues>({
         defaultValues: {
             hobbyId: props.mode === 'create' ? (props.fixedHobbyId ?? props.hobbies[0]?.id ?? '') : '',
             caption: props.mode === 'edit' ? (props.initialCaption ?? '') : '',
         },
     });
+
+    const hobbyItems = useMemo(() =>
+        props.mode === 'create'
+            ? props.hobbies.map(h => ({
+                label: `${h.name} (${h.experienceLevel})`,
+                value: h.id,
+            }))
+            : [],
+        [props.mode === 'create' ? props.hobbies : null]
+    );
+
+    const hobbyIdValue = watch('hobbyId');
+    const selectedHobbyLabel = hobbyIdValue && props.mode === 'create'
+        ? hobbyItems.find(i => i.value === hobbyIdValue)?.label ?? hobbyIdValue
+        : 'Select a hobby...';
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -100,7 +116,7 @@ export const HobbyPhotoForm = (props: Props) => {
                                     onPress={pickImage}
                                     disabled={props.isSubmitting}
                                 >
-                                    <Text>Change Photo</Text>
+                                    Change Photo
                                 </Button>
                             </>
                         ) : (
@@ -109,8 +125,9 @@ export const HobbyPhotoForm = (props: Props) => {
                                 icon="image-plus"
                                 onPress={pickImage}
                                 disabled={props.isSubmitting}
+                                style={commonStyles.lightBackground}
                             >
-                                <Text>Select Photo</Text>
+                                Select Photo
                             </Button>
                         )}
                         {errors.root && (
@@ -124,20 +141,19 @@ export const HobbyPhotoForm = (props: Props) => {
                             control={control}
                             name="hobbyId"
                             rules={{required: 'Please select a hobby'}}
-                            render={({field: {onChange, value}}) => (
+                            render={() => (
                                 <View style={styles.field}>
                                     <Text variant="labelLarge">Hobby</Text>
-                                    <View style={styles.pickerBorder}>
-                                        <Picker selectedValue={value} onValueChange={onChange}>
-                                            {props.hobbies.map(h => (
-                                                <Picker.Item
-                                                    key={h.id}
-                                                    label={`${h.name} (${h.experienceLevel})`}
-                                                    value={h.id}
-                                                />
-                                            ))}
-                                        </Picker>
-                                    </View>
+                                    <Button
+                                        mode="outlined"
+                                        icon="chevron-down"
+                                        onPress={() => setHobbyPickerVisible(true)}
+                                        disabled={props.isSubmitting}
+                                        contentStyle={styles.pickerButtonContent}
+                                        style={commonStyles.lightBackground}
+                                    >
+                                        {selectedHobbyLabel}
+                                    </Button>
                                     {errors.hobbyId && (
                                         <HelperText type="error">{errors.hobbyId.message}</HelperText>
                                     )}
@@ -146,6 +162,18 @@ export const HobbyPhotoForm = (props: Props) => {
                         />
                     )}
                 </>
+            )}
+
+            {/* Hobby search modal */}
+            {props.mode === 'create' && !props.fixedHobbyId && props.hobbies.length > 1 && (
+                <SearchablePickerModal
+                    visible={hobbyPickerVisible}
+                    title="Select Hobby"
+                    items={hobbyItems}
+                    selectedValue={hobbyIdValue}
+                    onSelect={(val) => setValue('hobbyId', val, {shouldValidate: true})}
+                    onDismiss={() => setHobbyPickerVisible(false)}
+                />
             )}
 
             {/* Caption */}
@@ -160,6 +188,7 @@ export const HobbyPhotoForm = (props: Props) => {
                             onChangeText={onChange}
                             mode="outlined"
                             disabled={props.isSubmitting}
+                            style={commonStyles.lightBackground}
                         />
                         {errors.caption && (
                             <HelperText type="error">{errors.caption.message}</HelperText>
@@ -175,7 +204,7 @@ export const HobbyPhotoForm = (props: Props) => {
                     disabled={props.isSubmitting}
                     style={styles.footerButton}
                 >
-                    <Text>Cancel</Text>
+                    Cancel
                 </Button>
                 <Button
                     mode="contained"
@@ -195,7 +224,7 @@ const styles = StyleSheet.create({
     container: {gap: spacing.lg},
     title: commonStyles.sectionTitle,
     field: {gap: spacing.sm},
-    pickerBorder: commonStyles.pickerBorder,
+    pickerButtonContent: {flexDirection: 'row-reverse'},
     preview: {width: '100%', aspectRatio: 1, borderRadius: 12},
     footer: commonStyles.footer,
     footerButton: commonStyles.footerButton,

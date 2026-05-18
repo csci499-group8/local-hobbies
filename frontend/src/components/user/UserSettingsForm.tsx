@@ -4,7 +4,7 @@ import { Text, TextInput, Button, Switch, List, Divider, HelperText } from 'reac
 import { useForm, Controller } from 'react-hook-form';
 import { UserResponse, UserGenderMatched } from '@/src/types/user';
 import { UserSettingsUpdateRequest } from '@/src/types/ui/user';
-import {colors, spacing} from '@/src/theme';
+import {spacing, theme} from '@/src/theme';
 
 interface Props {
     initialData: UserResponse;
@@ -25,7 +25,10 @@ export const UserSettingsForm = ({ initialData, onSubmit, isLoading }: Props) =>
     return (
         <View style={styles.container}>
             {/* Account Section */}
-            <List.Section title="Account Information">
+            <List.Section
+                title="Account Information"
+                titleStyle={styles.title}
+            >
                 <Controller
                     control={control}
                     name="email"
@@ -55,12 +58,14 @@ export const UserSettingsForm = ({ initialData, onSubmit, isLoading }: Props) =>
             <Divider />
 
             {/* Discovery Section */}
-            <List.Section title="Matching Gender">
+            <List.Section
+                title="Matching Gender"
+                titleStyle={styles.title}
+            >
                 <View style={styles.descriptionContainer}>
                     <Text variant="bodySmall" style={styles.description}>
-                        Please select the gender you want to go by for matching purposes.
-                        This will not be shown to others. You can personalize your displayed
-                        gender on your profile.
+                        This is used in searches so that others can match with you. It will not otherwise
+                        be shown to other users. You can personalize your displayed gender on your profile.
                     </Text>
                 </View>
                 <Controller
@@ -79,7 +84,7 @@ export const UserSettingsForm = ({ initialData, onSubmit, isLoading }: Props) =>
                                         compact
                                         disabled={isLoading}
                                     >
-                                        <Text>{gender}</Text>
+                                        {gender}
                                     </Button>
                                 ))}
                             </View>
@@ -94,7 +99,10 @@ export const UserSettingsForm = ({ initialData, onSubmit, isLoading }: Props) =>
             <Divider />
 
             {/* Privacy Section */}
-            <List.Section title="Privacy & Visibility">
+            <List.Section
+                title="Privacy & Visibility"
+                titleStyle={styles.title}
+            >
                 <Controller
                     control={control}
                     name="showAge"
@@ -126,7 +134,7 @@ export const UserSettingsForm = ({ initialData, onSubmit, isLoading }: Props) =>
                 disabled={isLoading}
                 style={styles.submitButton}
             >
-                <Text>Save Settings</Text>
+                Save Settings
             </Button>
         </View>
     );
@@ -134,16 +142,16 @@ export const UserSettingsForm = ({ initialData, onSubmit, isLoading }: Props) =>
 
 const styles = StyleSheet.create({
     container: {padding: spacing.lg},
+    title: {fontSize: 16, color: theme.colors.primary},
     inputGap: {marginBottom: 10},
-    sectionLabel: {paddingHorizontal: spacing.sm, marginBottom: 10, opacity: 0.6},
+    descriptionContainer: {paddingHorizontal: spacing.md, paddingBottom: spacing.sm},
+    description: {color: theme.colors.tertiaryDark, lineHeight: 20},
     segmentedContainer: {
         flexDirection: 'row',
         gap: spacing.sm,
         paddingHorizontal: spacing.sm,
-        marginBottom: spacing.lg,
+        paddingVertical: spacing.md
     },
     flexButton: {flex: 1},
     submitButton: {marginTop: 18},
-    descriptionContainer: {paddingHorizontal: spacing.lg, paddingVertical: spacing.sm},
-    description: {color: colors.textMuted, lineHeight: 20},
 });

@@ -29,7 +29,7 @@ export const HobbyPhotoGroupedGrid = ({photos, onPress, onEdit, onDelete}: Props
         <ScrollView contentContainerStyle={styles.container}>
             {sortedGroupNames.map((name, index) => (
                 <View key={name} style={styles.section}>
-                    {index > 0 && <Divider style={styles.divider} />}
+                    {/*{index > 0 && <Divider style={styles.divider} />}*/}
                     <Text variant="labelLarge" style={styles.groupHeader}>
                         {name}
                     </Text>
@@ -46,13 +46,15 @@ export const HobbyPhotoGroupedGrid = ({photos, onPress, onEdit, onDelete}: Props
 };
 
 const styles = StyleSheet.create({
-    container: {padding: spacing.lg},
+    container: {},
     section: {marginBottom: spacing.lg},
     groupHeader: {
         ...commonStyles.upperLabel,
-        marginBottom: spacing.md,
+        // marginBottom: spacing.md,
+        paddingTop: spacing.lg,
+        paddingHorizontal: spacing.lg,
         fontWeight: 'bold',
         letterSpacing: 1.5,
     },
-    divider: {marginBottom: spacing.xxl, marginTop: spacing.sm},
+    // divider: {marginBottom: spacing.xxl, marginTop: spacing.sm},
 });

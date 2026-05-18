@@ -46,7 +46,7 @@ export const OnboardingNameStep = ({initialValue, onComplete, isSubmitting}: Pro
                 disabled={isSubmitting}
                 style={styles.button}
             >
-                <Text>Continue</Text>
+                Continue
             </Button>
         </View>
     );

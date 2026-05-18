@@ -5,10 +5,10 @@ import {spacing, theme} from '@/src/theme';
 import {MaterialCommunityIcons} from "@expo/vector-icons";
 
 interface Props {
-    publicContactInfo: string;
+    contactInfo: string;
 }
 
-export const ProfileContactInfo = ({ publicContactInfo }: Props) => {
+export const ProfileContactInfo = ({ contactInfo }: Props) => {
     const theme = useTheme();
 
     return (
@@ -17,7 +17,7 @@ export const ProfileContactInfo = ({ publicContactInfo }: Props) => {
                 <MaterialCommunityIcons
                     name="contacts"
                     size={20}
-                    color={theme.colors.tertiary}
+                    color={theme.colors.primary}
                     style={styles.icon}
                 />
                 <View style={styles.textContainer}>
@@ -25,7 +25,7 @@ export const ProfileContactInfo = ({ publicContactInfo }: Props) => {
                         Contact Information
                     </Text>
                     <Text variant="bodyMedium" style={styles.info}>
-                        {publicContactInfo || 'No contact info provided'}
+                        {contactInfo || 'No contact info provided'}
                     </Text>
                 </View>
             </Card.Content>
@@ -37,11 +37,11 @@ const styles = StyleSheet.create({
     contactCard: {
         alignSelf: 'center',
         width: '80%',
-        marginVertical: spacing.md,
+        marginVertical: spacing.sm,
         backgroundColor: theme.colors.tertiaryLight,
         borderRadius: 16,
-        borderWidth: 1,
-        borderColor: theme.colors.tertiaryContainer,
+        borderWidth: 2,
+        borderColor: theme.colors.tertiary,
     },
     content: {
         flexDirection: 'row',
@@ -53,25 +53,6 @@ const styles = StyleSheet.create({
     icon: {marginRight: 4},
     textContainer: {alignItems: 'flex-start'},
     title: {opacity: 0.6, textTransform: 'uppercase', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5},
-    info: {fontWeight: '600', color: '#552a00'},
+    // info: {fontWeight: '600', color: '#552a00'},
+    info: {color: theme.colors.tertiaryDark}
 });
-
-// export const ProfileContactInfo = ({publicContactInfo}: Props) => (
-//     <Card style={styles.contactCard} mode="contained">
-//         <Card.Content>
-//             <List.Item
-//                 title="Contact Information"
-//                 description={publicContactInfo || 'No contact info provided'}
-//                 left={props => <List.Icon {...props} icon="contacts" />}
-//             />
-//         </Card.Content>
-//     </Card>
-// );
-//
-// const styles = StyleSheet.create({
-//     contactCard: {
-//         marginHorizontal: spacing.md,
-//         marginVertical: spacing.md,
-//         backgroundColor: theme.colors.surfaceVariant,
-//     },
-// });

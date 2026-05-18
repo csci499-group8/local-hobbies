@@ -17,7 +17,7 @@ import {OneTimeAvailabilityForm} from '@/src/components/availability/OneTimeAvai
 import {RecurringAvailabilityForm} from '@/src/components/availability/RecurringAvailabilityForm';
 import {OnboardingAvailabilityExceptionForm} from '@/src/components/onboarding/OnboardingAvailabilityExceptionForm';
 import {fromIsoDuration, validateDuration, formatDuration} from '@/src/utils/date-helpers';
-import {colors, spacing} from '@/src/theme';
+import {theme, commonStyles, spacing} from '@/src/theme';
 
 type ActiveForm =
     | {type: 'NONE'}
@@ -109,24 +109,10 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
 
     if (activeForm.type === 'EXCEPTION') {
         const {recurringIndex} = activeForm;
-        const parentRecurring = recurrings[recurringIndex];
+        // const parentRecurring = recurrings[recurringIndex];
 
         return (
             <View>
-                <View style={styles.exceptionHeader}>
-                    <Text variant="labelSmall" style={styles.exceptionParentLabel}>
-                        Exception for:
-                    </Text>
-                    <Text variant="bodyMedium" style={styles.exceptionParentName}>
-                        {parentRecurring.recurring.frequency}
-                        {parentRecurring.recurring.startDayOfWeek
-                            ? ` · ${parentRecurring.recurring.startDayOfWeek}`
-                            : ''}
-                        {parentRecurring.recurring.startDayOfMonth
-                            ? ` · Day ${parentRecurring.recurring.startDayOfMonth}`
-                            : ''}
-                    </Text>
-                </View>
                 <OnboardingAvailabilityExceptionForm
                     onSubmit={req => addException(recurringIndex, req)}
                     onDismiss={() => setActiveForm({type: 'NONE'})}
@@ -153,12 +139,13 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                         One-time
                     </Text>
                     {oneTimes.map((ot, i) => (
+                        <View key={i} style={styles.availabilityBlock}>
                         <List.Item
-                            key={i}
                             title={DateTime.fromISO(ot.date).toLocaleString(
                                 DateTime.DATE_MED_WITH_WEEKDAY
                             )}
                             description={`${ot.startTime} · ${formatDuration(ot.duration)}`}
+                            descriptionStyle={commonStyles.mutedText}
                             right={() => (
                                 <IconButton
                                     icon="close"
@@ -169,7 +156,9 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                                     }
                                 />
                             )}
+                            style={styles.availabilityItem}
                         />
+                        </View>
                     ))}
                 </View>
             )}
@@ -181,7 +170,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                         Recurring
                     </Text>
                     {recurrings.map((r, ri) => (
-                        <View key={ri} style={styles.recurringBlock}>
+                        <View key={ri} style={styles.availabilityBlock}>
                             {/* Recurring header */}
                             <List.Item
                                 title={`${r.recurring.frequency}${
@@ -194,6 +183,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                                         : ''
                                 }`}
                                 description={`${r.recurring.startTime} · ${formatDuration(r.recurring.duration)}`}
+                                descriptionStyle={commonStyles.mutedText}
                                 right={() => (
                                     <IconButton
                                         icon="close"
@@ -204,7 +194,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                                         }
                                     />
                                 )}
-                                style={styles.recurringItem}
+                                style={styles.availabilityItem}
                             />
 
                             {/* Exceptions nested under this recurring */}
@@ -242,7 +232,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                                                 icon="close"
                                                 onPress={() => removeException(ri, ei)}
                                             >
-                                                <Text>{''}</Text>
+                                                {''}
                                             </Button>
                                         </View>
                                     ))}
@@ -262,7 +252,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                                 }
                                 style={styles.addExceptionButton}
                             >
-                                <Text>Add exception</Text>
+                                Add exception
                             </Button>
                         </View>
                     ))}
@@ -280,7 +270,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                     disabled={isSubmitting}
                     style={styles.addButton}
                 >
-                    <Text>One-time</Text>
+                    One-time
                 </Button>
                 <Button
                     mode="outlined"
@@ -289,7 +279,7 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
                     disabled={isSubmitting}
                     style={styles.addButton}
                 >
-                    <Text>Recurring</Text>
+                    Recurring
                 </Button>
             </View>
 
@@ -307,43 +297,43 @@ export const OnboardingAvailabilityStep = ({initialValue, onComplete, isSubmitti
 
 const styles = StyleSheet.create({
     container: {gap: spacing.lg},
-    description: {color: colors.textSecondary, lineHeight: 20},
+    description: {color: theme.colors.tertiaryDark},
     sectionLabel: {
-        color: colors.textMuted,
+        color: theme.colors.primary,
         textTransform: 'uppercase',
         letterSpacing: 1,
         marginBottom: spacing.xs,
     },
     recurringsSection: {gap: spacing.sm},
-    recurringBlock: {
+    availabilityBlock: {
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.colors.tertiaryDark,
         borderRadius: 8,
         overflow: 'hidden',
         marginBottom: spacing.sm,
     },
-    recurringItem: {backgroundColor: colors.surfaceVariant},
+    availabilityItem: {backgroundColor: theme.colors.tertiaryLight},
     exceptionsBlock: {paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: spacing.xs},
     exceptionsLabel: {
-        color: colors.textMuted,
+        ...commonStyles.mutedText,
         textTransform: 'uppercase',
         letterSpacing: 1,
         marginBottom: spacing.xs,
         marginTop: spacing.sm,
     },
     exceptionRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
-    exceptionDate: {flex: 1, color: colors.textSecondary},
-    cancelledChip: {backgroundColor: colors.cancelled},
-    modifiedChip: {backgroundColor: colors.surfaceInput},
+    exceptionDate: {flex: 1, color: theme.colors.tertiaryDark},
+    cancelledChip: {backgroundColor: theme.colors.cancelled},
+    modifiedChip: {backgroundColor: theme.colors.tertiary},
     addExceptionButton: {alignSelf: 'flex-start', marginLeft: spacing.sm, marginBottom: spacing.xs},
     exceptionHeader: {
-        padding: spacing.lg,
-        paddingBottom: spacing.sm,
+        // padding: spacing.lg,
+        paddingBottom: spacing.lg,
         gap: spacing.xs,
-        backgroundColor: colors.surfaceVariant,
+        // backgroundColor: theme.colors.tertiary,
     },
-    exceptionParentLabel: {color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1},
-    exceptionParentName: {color: colors.textPrimary, fontWeight: '600'},
+    exceptionParentLabel: {...commonStyles.mutedText, textTransform: 'uppercase', letterSpacing: 1},
+    exceptionParentName: {color: theme.colors.primary, fontWeight: '600'},
     divider: {marginVertical: spacing.sm},
     addRow: {flexDirection: 'row', gap: spacing.md},
     addButton: {flex: 1},

@@ -102,6 +102,7 @@ export const useMatch = () => {
         //saved matches
         savedMatches: savedMatchesQuery.data ?? [],
         savedMatchesLoading: savedMatchesQuery.isLoading,
+        savedMatchesFetching: savedMatchesQuery.isFetching,
         savedMatchesError: savedMatchesQuery.error?.message ?? null,
 
         //deleted matches

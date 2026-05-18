@@ -21,32 +21,45 @@ export const RecurringAvailabilityCard = ({item, onEdit, onDelete, onAddExceptio
         : 'ongoing';
     const startTime = DateTime.fromISO(`2000-01-01T${item.startTime}`).toLocaleString(DateTime.TIME_SIMPLE);
     const duration = formatDuration(item.duration);
+    const startDay = item.startDayOfWeek
+        ? item.startDayOfWeek.charAt(0).toUpperCase() + item.startDayOfWeek.slice(1).toLowerCase()
+        : item.startDayOfMonth;
 
     return (
         <Card style={styles.card} mode="outlined">
             <Card.Content style={styles.content}>
                 <View style={styles.info}>
-                    <Text variant="titleSmall">{item.frequency}</Text>
+                    <Text variant="titleSmall">
+                        {item.frequency} · {startDay}
+                    </Text>
                     <Text variant="bodySmall" style={styles.sub}>
                         {startTime} · {duration}
                     </Text>
                     <Text variant="bodySmall" style={styles.sub}>
                         {ruleStart} – {ruleEnd}
                     </Text>
-                    {item.startDayOfWeek && (
-                        <Chip compact mode="flat" style={styles.chip}>{item.startDayOfWeek}</Chip>
-                    )}
                 </View>
                 <View style={styles.actions}>
                     <Tooltip title="Add Exception">
                         <IconButton
                             icon="calendar-remove"
                             size={20}
+                            iconColor={theme.colors.primary}
                             onPress={onAddException}
                         />
                     </Tooltip>
-                    <IconButton icon="pencil" size={20} onPress={onEdit} />
-                    <IconButton icon="delete" size={20} iconColor={theme.colors.error} onPress={onDelete} />
+                    <IconButton
+                        icon="pencil"
+                        size={20}
+                        iconColor={theme.colors.primary}
+                        onPress={onEdit}
+                    />
+                    <IconButton
+                        icon="delete"
+                        size={20}
+                        iconColor={theme.colors.error}
+                        onPress={onDelete}
+                    />
                 </View>
             </Card.Content>
         </Card>
@@ -58,6 +71,5 @@ const styles = StyleSheet.create({
     content: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
     info: {flex: 1, gap: 4},
     sub: {opacity: 0.6},
-    chip: {alignSelf: 'flex-start', backgroundColor: theme.colors.surfaceInput},
     actions: {flexDirection: 'row'},
 });

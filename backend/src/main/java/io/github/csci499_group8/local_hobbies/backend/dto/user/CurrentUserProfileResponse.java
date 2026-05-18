@@ -15,7 +15,7 @@ public record CurrentUserProfileResponse (
     String genderDisplayed, //null if not set or if showGenderDisplayed is false
     String bio, //nullable
     @NotBlank String locationApproximate,
-    @NotBlank String publicContactInfo,
+    @NotBlank String contactInfo,
     String profilePhotoUrl, //nullable
     @Valid @NotNull List<HobbyResponse> hobbies, //may be empty (but user won't show up in searches)
     @Valid @NotNull List<HobbyPhotoResponse> hobbyPhotos //may be empty

@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {View, ScrollView, StyleSheet} from 'react-native';
 import {ActivityIndicator, Text, Appbar, Divider, Button} from 'react-native-paper';
 import {useRouter, useLocalSearchParams} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useOtherUserProfile} from '@/src/hooks/useUser';
 import {ProfileHeader} from '@/src/components/user/profile-view/ProfileHeader';
 import {ProfileBio} from '@/src/components/user/profile-view/ProfileBio';
@@ -12,6 +13,7 @@ import {AvailabilityCalendar} from '@/src/components/availability/AvailabilityCa
 
 export default function UserProfileScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const {userId} = useLocalSearchParams<{userId: string}>();
     const {otherUserProfile, otherUserProfileLoading, otherUserProfileError} = useOtherUserProfile(userId);
     const [showAvailability, setShowAvailability] = useState(false);
@@ -43,7 +45,7 @@ export default function UserProfileScreen() {
         bio,
         hobbies,
         hobbyPhotos,
-        publicContactInfo,
+        contactInfo,
         overlappingHobbies,
         overlappingAvailabilities,
     } = otherUserProfile;
@@ -60,7 +62,10 @@ export default function UserProfileScreen() {
                 <Appbar.Content title={name} />
             </Appbar.Header>
 
-            <ScrollView style={styles.container}>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={{paddingBottom: insets.bottom + 16}}
+            >
                 <ProfileHeader
                     name={name}
                     age={age}
@@ -68,12 +73,26 @@ export default function UserProfileScreen() {
                     locationApproximate={locationApproximate}
                     profilePhotoUrl={profilePhotoUrl}
                 />
+
+                {contactInfo && (
+                    <>
+                    <Divider style={styles.divider} />
+                    <View style={styles.contactSection}>
+                        <Text>You're mutual matches!</Text>
+                        <ProfileContactInfo contactInfo={contactInfo} />
+                    </View>
+                    </>
+                )}
+
                 <Divider style={styles.divider} />
+
                 <ProfileBio bio={bio} />
+
                 <ProfileHobbies
                     hobbies={hobbies}
                     overlappingHobbyNames={overlappingHobbyNames}
                 />
+
                 <ProfileHobbyPhotos hobbyPhotos={hobbyPhotos} />
 
                 <Divider style={styles.divider} />
@@ -87,11 +106,12 @@ export default function UserProfileScreen() {
                             onPress={() => setShowAvailability(prev => !prev)}
                             style={styles.availabilityToggle}
                         >
-                            {showAvailability ? "Hide when you're both free" : "Show when you're both free"}
+                            {showAvailability ? "Hide when you're both free" : "Show when you're both free (next 30 days)"}
                         </Button>
 
                         {showAvailability && (
-                            <View style={styles.calendarContainer}>
+                            <View>
+                            {/*<View style={styles.calendarContainer}>*/}
                                 <AvailabilityCalendar
                                     mode="overlap"
                                     intervals={overlappingAvailabilities}
@@ -100,9 +120,6 @@ export default function UserProfileScreen() {
                         )}
                     </View>
                 )}
-
-                <Divider style={styles.divider} />
-                <ProfileContactInfo publicContactInfo={publicContactInfo} />
             </ScrollView>
         </View>
     );
@@ -110,12 +127,11 @@ export default function UserProfileScreen() {
 
 const styles = StyleSheet.create({
     screen: {flex: 1},
-    container: {flex: 1, backgroundColor: '#fff'},
+    container: {flex: 1},
     centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
     divider: {marginHorizontal: 32},
+    contactSection: {flex: 1, alignItems: 'center', paddingVertical: 24},
     availabilitySection: {paddingHorizontal: 24, paddingVertical: 8},
     availabilityToggle: {alignSelf: 'center'},
-    //height: 350 bounds the height of the scroll view
-    calendarContainer: {height: 350, paddingVertical: 8, gap: 8}, //TODO: 300?
     sectionTitle: {fontWeight: 'bold', textAlign: 'center'},
 });

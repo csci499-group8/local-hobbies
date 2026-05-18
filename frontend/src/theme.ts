@@ -10,31 +10,33 @@ export const spacing = {
 } as const;
 
 export const colors = {
-    // Surfaces
-    surface: '#ffffff',
-    surfaceVariant: '#f0f2f5',
-    surfaceInput: '#e8e8e8',
+    background: '#fffaf3',
 
-    // Text
-    textPrimary: '#111111',
-    textSecondary: '#444444',
-    textMuted: '#666666',
-    textDisabled: '#999999',
+    // Surfaces
+    surface: '#8968af', //original blue: 161
+    onSurface: '#4a0080',
+    // surfaceVariant: 'rgba(255,237,217,0.35)',
+    surfaceVariant: '#fdf3e5',
+
+    // // Text
+    // textPrimary: '#111111',
+    // textSecondary: '#444444',
+    // textMuted: '#666666',
+    // textDisabled: '#999999',
 
     // Borders
-    border: '#cccccc',
-    borderStrong: '#999999',
+    border: '#fdb177',
+    borderStrong: '#c85600',
 
     // Brand
     primary: '#4a0080',
-    primaryLight: '#d4aaff',
+    primaryLight: '#e4cbfd',
     onPrimary: '#ffffff',
 
     tertiary: '#fdb177',
-    tertiaryLight: '#ffedd9ff',
-    onTertiary: '#111111',
-    tertiaryContainer: '#fbd9b3',
-    onTertiaryContainer: '#552a00',
+    tertiaryLight: '#ffedd9',
+    tertiaryDark: '#c85600',
+    tertiaryContainer: '#fdd9b6',
 
     // Semantic
     error: '#b00020',
@@ -44,9 +46,6 @@ export const colors = {
     // Map pin
     pin: '#4a0080',
 
-    // Cards
-    cardBackground: '#ffffff',
-    cardBorder: '#dddddd',
 } as const;
 
 // Colors — extends Paper's MD3 theme so useTheme() picks them up
@@ -56,46 +55,49 @@ export const theme = {
     colors: {
         ...MD3LightTheme.colors,
         primary: colors.primary,
+        primaryLight: colors.primaryLight,
         onPrimary: colors.onPrimary,
         tertiary: colors.tertiary,
         tertiaryLight: colors.tertiaryLight,
-        onTertiary: colors.onTertiary,
+        tertiaryDark: colors.tertiaryDark,
         tertiaryContainer: colors.tertiaryContainer,
-        onTertiaryContainer: colors.onTertiaryContainer,
         error: colors.error,
         cancelled: colors.cancelled,
+        background: colors.background,
         surface: colors.surface,
+        onSurface: colors.onSurface,
         surfaceVariant: colors.surfaceVariant,
-        surfaceInput: colors.surfaceInput,
-        outline: colors.borderStrong,
-        overlapping: colors.overlapping
+        outline: colors.border,
+        overlapping: colors.overlapping,
+
     },
 
 };
 
 export const commonStyles = {
     card: {
-        backgroundColor: colors.cardBackground,
+        backgroundColor: colors.tertiaryLight,
     },
     sectionTitle: {
         fontWeight: 'bold' as const,
-        color: colors.textPrimary,
+        color: colors.primary,
         fontSize: 16,
     },
     bodyText: {
         lineHeight: 22,
-        color: colors.textSecondary,
+        color: colors.primary,
     },
     mutedText: {
-        color: colors.textMuted,
-        fontStyle: 'italic' as const,
+        color: colors.primary,
+        opacity: 0.6,
+        // fontStyle: 'italic' as const,
     },
     fieldLabel: {
-        color: colors.textSecondary,
-        lineHeight: 20,
+        color: colors.tertiaryDark,
+        // lineHeight: 20,
     },
     upperLabel: {
-        color: colors.textMuted,
+        color: colors.primary,
         textTransform: 'uppercase' as const,
         letterSpacing: 1,
         fontSize: 11,
@@ -133,5 +135,8 @@ export const commonStyles = {
         flex: 1,
         justifyContent: 'center' as const,
         alignItems: 'center' as const,
+    },
+    lightBackground: {
+        backgroundColor: theme.colors.surfaceVariant
     },
 } as const;

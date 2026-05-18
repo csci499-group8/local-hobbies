@@ -1,4 +1,4 @@
-import {UserResponse, UserUpdateRequest} from '../user';
+import {UserUpdateRequest} from '../user';
 
 /**
  * UI-only data structure for UserProfileForm.
@@ -11,7 +11,7 @@ export interface UserProfileUpdateRequest extends Pick<
     'genderDisplayed' |
     'bio' |
     'location' |
-    'publicContactInfo'
+    'contactInfo'
 > {
     //profile photo metadata
     photo?: {

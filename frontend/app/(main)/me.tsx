@@ -2,15 +2,17 @@ import React from 'react';
 import {View, ScrollView, StyleSheet} from 'react-native';
 import {ActivityIndicator, Text, Appbar, Divider, Button, IconButton} from 'react-native-paper';
 import {useRouter} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useUser} from '@/src/hooks/useUser';
 import {ProfileHeader} from '@/src/components/user/profile-view/ProfileHeader';
 import {ProfileBio} from '@/src/components/user/profile-view/ProfileBio';
 import {ProfileHobbies} from '@/src/components/user/profile-view/ProfileHobbies';
 import {ProfileHobbyPhotos} from '@/src/components/user/profile-view/ProfileHobbyPhotos';
-import {ProfileContactInfo} from '@/src/components/user/profile-view/ProfileContactInfo';
+import {theme} from "@/src/theme";
 
 export default function MeScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const {currentUserProfile, currentUserProfileLoading, currentUserProfileError} = useUser();
 
     if (currentUserProfileLoading) {
@@ -40,7 +42,6 @@ export default function MeScreen() {
         bio,
         hobbies,
         hobbyPhotos,
-        publicContactInfo,
     } = currentUserProfile;
 
     return (
@@ -48,11 +49,22 @@ export default function MeScreen() {
             <Appbar.Header>
                 <Appbar.BackAction onPress={() => router.back()} />
                 <Appbar.Content title="Profile Preview" />
-                <Appbar.Action icon="pencil" onPress={() => router.push('/edit-profile')} />
-                <Appbar.Action icon="cog" onPress={() => router.push('/settings')} />
+                <Appbar.Action
+                    icon="pencil"
+                    color={theme.colors.primary}
+                    onPress={() => router.push('/edit-profile')}
+                />
+                <Appbar.Action
+                    icon="cog"
+                    color={theme.colors.primary}
+                    onPress={() => router.push('/settings')}
+                />
             </Appbar.Header>
 
-            <ScrollView style={styles.container}>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={{paddingBottom: insets.bottom + 16}}
+            >
                 <ProfileHeader
                     name={name}
                     age={age}
@@ -71,11 +83,11 @@ export default function MeScreen() {
                     <Button
                         mode="text"
                         compact
-                        icon="pencil"
+                        icon="palette"
                         onPress={() => router.push('/hobbies')}
                         style={styles.manageButton}
                     >
-                        <Text>Manage Hobbies</Text>
+                        Manage Hobbies
                     </Button>
                 </View>
 
@@ -89,13 +101,9 @@ export default function MeScreen() {
                         onPress={() => router.push('/hobbies/photos')}
                         style={styles.manageButton}
                     >
-                        <Text>Manage Photos</Text>
+                        Manage Photos
                     </Button>
                 </View>
-
-                <Divider style={styles.divider} />
-
-                <ProfileContactInfo publicContactInfo={publicContactInfo} />
 
                 <Text variant="labelSmall" style={styles.footerNote}>
                     This is how your profile appears to other users.
@@ -107,7 +115,7 @@ export default function MeScreen() {
 
 const styles = StyleSheet.create({
     screen: {flex: 1},
-    container: {flex: 1, backgroundColor: '#fff'},
+    container: {flex: 1},
     centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
     divider: {marginHorizontal: 32},
     sectionContainer: {position: 'relative', paddingBottom: 8},

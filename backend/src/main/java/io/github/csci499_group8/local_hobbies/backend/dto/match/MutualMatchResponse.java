@@ -13,5 +13,6 @@ public record MutualMatchResponse(
     @Valid @NotNull MatchedUser savedUser,
     @NotNull List<HobbyOverlapResponse> overlappingHobbies,
     String notes, //nullable
-    @NotNull OffsetDateTime mutualMatchTime
+    @NotNull OffsetDateTime mutualMatchTime,
+    @NotNull String contactInfo
 ) {}

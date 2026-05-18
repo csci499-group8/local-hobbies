@@ -38,13 +38,13 @@ public record MatchSearchRequest(
 
     @JsonTypeName("Minimum age")
     public record MinAgeFilter(
-        @NotNull @Min(13) Integer minAge,
+        @NotNull @Min(18) @Max(120) Integer minAge,
         @NotNull boolean isHard
     ) implements MatchSearchFilter {}
 
     @JsonTypeName("Maximum age")
     public record MaxAgeFilter(
-        @NotNull @Max(120) Integer maxAge,
+        @NotNull @Min(18) @Max(120) Integer maxAge,
         @NotNull boolean isHard
     ) implements MatchSearchFilter {}
 

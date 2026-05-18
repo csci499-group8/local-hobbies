@@ -21,7 +21,19 @@ export default [
         },
         rules: {
             "react/jsx-no-useless-fragment": "warn",
-            "react-native/no-raw-text": "error",
+            "react-native/no-raw-text": [
+                "error",
+                {
+                    "skip": [
+                        "Button",
+                        "Text",
+                        "HelperText",
+                        "TextInput.Icon",
+                        "Chip",
+                        "Badge"
+                    ]
+                }
+            ],
             "react/jsx-no-target-blank": "error",
             "@typescript-eslint/no-unused-vars": "warn",
         },

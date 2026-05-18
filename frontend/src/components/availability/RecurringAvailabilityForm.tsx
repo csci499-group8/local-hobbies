@@ -1,8 +1,7 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, Platform, Alert} from 'react-native';
-import {Button, Text, Switch, HelperText} from 'react-native-paper';
+import {View, StyleSheet, Platform, Alert, ScrollView} from 'react-native';
+import {Button, Text, Switch, HelperText, Menu} from 'react-native-paper';
 import {useForm, Controller} from 'react-hook-form';
-import {Picker} from '@react-native-picker/picker';
 import DateTimePicker, {DateTimePickerEvent} from '@react-native-community/datetimepicker';
 import {DateTime} from 'luxon';
 import {
@@ -23,7 +22,7 @@ import {LocationPickerModal} from '@/src/components/location/LocationPickerModal
 import {LocationPicker} from '@/src/components/location/LocationPicker';
 import {useLocationField} from '@/src/hooks/useLocationField';
 import {DurationPicker, DurationValue} from '@/src/components/availability/DurationPicker';
-import {spacing, commonStyles, colors} from '@/src/theme';
+import {spacing, commonStyles, colors, theme} from '@/src/theme';
 
 // Frequencies that require day of week selection
 const WEEKLY_FREQUENCIES: AvailabilityFrequency[] = [
@@ -69,6 +68,9 @@ export const RecurringAvailabilityForm = (props: Props) => {
     const locationField = useLocationField(
         props.mode === 'edit' ? props.item.location : undefined
     );
+    
+    // Limit date selection to 180 days in the future
+    const maxDate = DateTime.now().plus({days: 180}).toJSDate();
 
     const {control, handleSubmit, setValue, watch, formState: {errors}} = useForm<FormValues>({
         defaultValues: {
@@ -169,22 +171,17 @@ export const RecurringAvailabilityForm = (props: Props) => {
                     control={control}
                     name="frequency"
                     render={({field: {onChange, value}}) => (
-                        <View style={styles.pickerBorder}>
-                            <Picker
-                                selectedValue={value}
-                                onValueChange={(val) => {
-                                    onChange(val);
+                        <FrequencyMenu
+                            value={value}
+                            onChange={(val) => {
+                                onChange(val);
                                     // Clear day fields when frequency changes
                                     // so user makes a fresh selection for new type
-                                    setValue('startDayOfWeek', '');
-                                    setValue('startDayOfMonth', '');
-                                }}
-                            >
-                                {Object.values(AvailabilityFrequency).map(f => (
-                                    <Picker.Item key={f} label={f} value={f} />
-                                ))}
-                            </Picker>
-                        </View>
+                                setValue('startDayOfWeek', '');
+                                setValue('startDayOfMonth', '');
+                            }}
+                            disabled={props.isSubmitting}
+                        />
                     )}
                 />
             </View>
@@ -200,17 +197,11 @@ export const RecurringAvailabilityForm = (props: Props) => {
                         name="startDayOfWeek"
                         rules={{required: 'Day of week is required'}}
                         render={({field: {onChange, value}}) => (
-                            <View style={styles.pickerBorder}>
-                                <Picker
-                                    selectedValue={value}
-                                    onValueChange={onChange}
-                                >
-                                    <Picker.Item label="Select a day..." value="" />
-                                    {Object.values(DayOfWeek).map(d => (
-                                        <Picker.Item key={d} label={d} value={d} />
-                                    ))}
-                                </Picker>
-                            </View>
+                            <DayOfWeekMenu
+                                value={value}
+                                onChange={onChange}
+                                disabled={props.isSubmitting}
+                            />
                         )}
                     />
                     {errors.startDayOfWeek && (
@@ -232,21 +223,11 @@ export const RecurringAvailabilityForm = (props: Props) => {
                         name="startDayOfMonth"
                         rules={{required: 'Day of month is required'}}
                         render={({field: {onChange, value}}) => (
-                            <View style={styles.pickerBorder}>
-                                <Picker
-                                    selectedValue={value}
-                                    onValueChange={onChange}
-                                >
-                                    <Picker.Item label="Select a day..." value="" />
-                                    {Array.from({length: 31}, (_, i) => i + 1).map(d => (
-                                        <Picker.Item
-                                            key={d}
-                                            label={d.toString()}
-                                            value={d}
-                                        />
-                                    ))}
-                                </Picker>
-                            </View>
+                            <DayOfMonthMenu
+                                value={value}
+                                onChange={onChange}
+                                disabled={props.isSubmitting}
+                            />
                         )}
                     />
                     {errors.startDayOfMonth && (
@@ -254,9 +235,6 @@ export const RecurringAvailabilityForm = (props: Props) => {
                             {errors.startDayOfMonth.message}
                         </HelperText>
                     )}
-                    <Text variant="bodySmall" style={styles.hint}>
-                        For months with fewer days, the last day of the month is used.
-                    </Text>
                 </View>
             )}
 
@@ -268,8 +246,9 @@ export const RecurringAvailabilityForm = (props: Props) => {
                     icon="clock"
                     onPress={() => setShowTimePicker(true)}
                     disabled={props.isSubmitting}
+                    style={commonStyles.lightBackground}
                 >
-                    <Text>{DateTime.fromJSDate(startTime).toLocaleString(DateTime.TIME_SIMPLE)}</Text>
+                    {DateTime.fromJSDate(startTime).toLocaleString(DateTime.TIME_SIMPLE)}
                 </Button>
                 {showTimePicker && (
                     <DateTimePicker
@@ -287,6 +266,9 @@ export const RecurringAvailabilityForm = (props: Props) => {
             {/* Duration */}
             <View style={styles.field}>
                 <Text variant="labelLarge">Duration</Text>
+                <Text variant="bodySmall" style={styles.hint}>
+                    Duration must be between 15 minutes and 7 days.
+                </Text>
                 <DurationPicker
                     value={duration}
                     onChange={val => setValue('duration', val)}
@@ -298,11 +280,16 @@ export const RecurringAvailabilityForm = (props: Props) => {
             {/* Rule start */}
             <View style={styles.field}>
                 <Text variant="labelLarge">Starts on</Text>
+                <Text variant="bodySmall" style={styles.hint}>
+                    This is the date the recurrence rule starts on, not the day the availability occurs.
+                    The date must be within the next 180 days.
+                </Text>
                 <Button
                     mode="outlined"
                     icon="calendar"
                     onPress={() => setShowStartPicker(true)}
                     disabled={props.isSubmitting}
+                    style={commonStyles.lightBackground}
                 >
                     {DateTime.fromJSDate(ruleStart).toLocaleString(DateTime.DATE_MED)}
                 </Button>
@@ -311,6 +298,8 @@ export const RecurringAvailabilityForm = (props: Props) => {
                         value={ruleStart}
                         mode="date"
                         display={DATE_PICKER_DISPLAY}
+                        minimumDate={new Date()}
+                        maximumDate={maxDate}
                         onChange={(_: DateTimePickerEvent, d?: Date) => {
                             setShowStartPicker(Platform.OS === 'ios');
                             if (d) setValue('ruleStart', d);
@@ -320,25 +309,34 @@ export const RecurringAvailabilityForm = (props: Props) => {
             </View>
 
             {/* Rule end toggle */}
-            <View style={styles.switchRow}>
-                <Text variant="bodyMedium">Has end date</Text>
-                <Controller
-                    control={control}
-                    name="hasRuleEnd"
-                    render={({field: {onChange, value}}) => (
-                        <Switch value={value} onValueChange={onChange} />
-                    )}
-                />
+            <View style={styles.field}>
+                <View style={styles.switchRow}>
+                    <Text variant="bodyMedium">Has end date</Text>
+                    <Controller
+                        control={control}
+                        name="hasRuleEnd"
+                        render={({field: {onChange, value}}) => (
+                            <Switch value={value} onValueChange={onChange} />
+                        )}
+                    />
+                </View>
+                <Text variant="bodySmall" style={styles.hint}>
+                    This is the date the recurrence rule ends on, not the day the availability occurs. Recurring availabilities may continue indefinitely.
+                </Text>
             </View>
 
             {hasRuleEnd && (
                 <View style={styles.field}>
                     <Text variant="labelLarge">Ends on</Text>
+                    <Text variant="bodySmall" style={styles.hint}>
+                        Date must be within the next 180 days.
+                    </Text>
                     <Button
                         mode="outlined"
                         icon="calendar"
                         onPress={() => setShowEndPicker(true)}
                         disabled={props.isSubmitting}
+                        style={commonStyles.lightBackground}
                     >
                         {DateTime.fromJSDate(ruleEnd).toLocaleString(DateTime.DATE_MED)}
                     </Button>
@@ -348,6 +346,7 @@ export const RecurringAvailabilityForm = (props: Props) => {
                             mode="date"
                             display={DATE_PICKER_DISPLAY}
                             minimumDate={ruleStart}
+                            maximumDate={maxDate}
                             onChange={(_: DateTimePickerEvent, d?: Date) => {
                                 setShowEndPicker(Platform.OS === 'ios');
                                 if (d) setValue('ruleEnd', d);
@@ -365,6 +364,7 @@ export const RecurringAvailabilityForm = (props: Props) => {
                     icon="map-marker"
                     onPress={locationField.openPicker}
                     disabled={props.isSubmitting}
+                    style={commonStyles.lightBackground}
                 >
                     {locationField.address ?? (locationField.location ? 'Location set' : 'Choose location')}
                 </Button>
@@ -377,7 +377,7 @@ export const RecurringAvailabilityForm = (props: Props) => {
                     disabled={props.isSubmitting}
                     style={styles.footerButton}
                 >
-                    <Text>Cancel</Text>
+                    Cancel
                 </Button>
                 <Button
                     mode="contained"
@@ -403,18 +403,136 @@ export const RecurringAvailabilityForm = (props: Props) => {
     );
 };
 
+// ─── Menu sub-components ───────────────────────────────────────────────────────
+// Small inline Menu dropdowns replacing <Picker> for short fixed-length lists.
+
+const FrequencyMenu = ({value, onChange, disabled}: {
+    value: AvailabilityFrequency;
+    onChange: (v: AvailabilityFrequency) => void;
+    disabled: boolean;
+}) => {
+    const [open, setOpen] = useState(false);
+    return (
+        <Menu
+            visible={open}
+            onDismiss={() => setOpen(false)}
+            anchor={
+                <Button
+                    mode="outlined"
+                    icon="chevron-down"
+                    onPress={() => setOpen(true)}
+                    disabled={disabled}
+                    contentStyle={menuStyles.buttonContent}
+                    style={commonStyles.lightBackground}
+                >
+                    {value}
+                </Button>
+            }
+        >
+            {Object.values(AvailabilityFrequency).map(f => (
+                <Menu.Item
+                    key={f}
+                    title={f}
+                    trailingIcon={f === value ? 'check' : undefined}
+                    onPress={() => { onChange(f); setOpen(false); }}
+                />
+            ))}
+        </Menu>
+    );
+};
+
+const DayOfWeekMenu = ({value, onChange, disabled}: {
+    value: DayOfWeek | '';
+    onChange: (v: DayOfWeek | '') => void;
+    disabled: boolean;
+}) => {
+    const [open, setOpen] = useState(false);
+    const label = value || 'Select a day...';
+    return (
+        <Menu
+            visible={open}
+            onDismiss={() => setOpen(false)}
+            anchor={
+                <Button
+                    mode="outlined"
+                    icon="chevron-down"
+                    onPress={() => setOpen(true)}
+                    disabled={disabled}
+                    contentStyle={menuStyles.buttonContent}
+                    style={commonStyles.lightBackground}
+                >
+                    {label}
+                </Button>
+            }
+        >
+            {Object.values(DayOfWeek).map(d => (
+                <Menu.Item
+                    key={d}
+                    title={d}
+                    trailingIcon={d === value ? 'check' : undefined}
+                    onPress={() => { onChange(d); setOpen(false); }}
+                />
+            ))}
+        </Menu>
+    );
+};
+
+const DayOfMonthMenu = ({value, onChange, disabled}: {
+    value: number | '';
+    onChange: (v: number | '') => void;
+    disabled: boolean;
+}) => {
+    const [open, setOpen] = useState(false);
+    const label = value !== '' ? value.toString() : 'Select a day...';
+    const days = Array.from({length: 31}, (_, i) => i + 1);
+    return (
+        <Menu
+            visible={open}
+            onDismiss={() => setOpen(false)}
+            anchor={
+                <Button
+                    mode="outlined"
+                    icon="chevron-down"
+                    onPress={() => setOpen(true)}
+                    disabled={disabled}
+                    contentStyle={menuStyles.buttonContent}
+                    style={commonStyles.lightBackground}
+                >
+                    {label}
+                </Button>
+            }
+        >
+            <ScrollView style={menuStyles.scrollableMenu}>
+                {days.map(d => (
+                    <Menu.Item
+                        key={d}
+                        title={d.toString()}
+                        trailingIcon={d === value ? 'check' : undefined}
+                        onPress={() => { onChange(d); setOpen(false); }}
+                    />
+                ))}
+            </ScrollView>
+        </Menu>
+    );
+};
+
+const menuStyles = StyleSheet.create({
+    buttonContent: {flexDirection: 'row-reverse'},
+    scrollableMenu: {maxHeight: 240},
+});
+
+
 const styles = StyleSheet.create({
     container: {gap: spacing.xl},
     title: commonStyles.sectionTitle,
     field: {gap: spacing.sm},
-    pickerBorder: commonStyles.pickerBorder,
     switchRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     required: {color: colors.error},
-    hint: {color: colors.textMuted},
+    hint: {color: theme.colors.tertiaryDark},
     footer: commonStyles.footer,
     footerButton: commonStyles.footerButton,
     fullScreen: {flex: 1, minHeight: 500},

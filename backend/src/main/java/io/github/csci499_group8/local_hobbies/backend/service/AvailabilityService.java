@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,6 +51,12 @@ public class AvailabilityService {
 
     // --- methods called by AvailabilityController ---
 
+    /**
+     * Get a user's schedule. The schedule contains the lists of all of a user's
+     * Availability objects from the previous day onwards (one day grace period),
+     * and the flattened AvailabilityIntervals they are projected to from today
+     * onwards (no grace period).
+     */
     @Transactional(readOnly = true)
     public ScheduleResponse getSchedule(UUID userId) {
         List<AvailabilityIntervalResponse> intervals =
@@ -58,14 +65,16 @@ public class AvailabilityService {
             .map(availabilityMapper::toIntervalResponse)
             .toList();
 
+        LocalDate cutoffDate = LocalDate.now().minusDays(1);
+
         ScheduleResponse.Availabilities availabilities = new ScheduleResponse.Availabilities(
-                oneTimeRepository.findAllByUserId(userId).stream()
+                oneTimeRepository.findActiveByUserId(userId, cutoffDate.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime()).stream()
                                  .map(availabilityMapper::toOneTimeResponse)
                                  .toList(),
-                recurringRepository.findAllByUserId(userId).stream()
+                recurringRepository.findActiveByUserId(userId, cutoffDate).stream()
                                    .map(availabilityMapper::toRecurringResponse)
                                    .toList(),
-                exceptionRepository.findAllByUserId(userId).stream()
+                exceptionRepository.findActiveByUserId(userId, cutoffDate).stream()
                                    .map(availabilityMapper::toExceptionResponse)
                                    .toList()
         );

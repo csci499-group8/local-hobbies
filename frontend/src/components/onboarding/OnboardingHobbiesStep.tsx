@@ -31,8 +31,8 @@ export const OnboardingHobbiesStep = ({initialValue, onComplete, isSubmitting}: 
     };
 
     const handleContinue = () => {
-        if (hobbies.length === 0) {
-            Alert.alert('Hobbies required', 'Please add at least one hobby to continue.');
+        if (hobbies.length < 3) {
+            Alert.alert('Hobbies required', 'Please add at least three hobbies to continue.');
             return;
         }
         onComplete(hobbies);
@@ -41,7 +41,7 @@ export const OnboardingHobbiesStep = ({initialValue, onComplete, isSubmitting}: 
     return (
         <View style={styles.container}>
             <Text variant="bodyMedium" style={styles.description}>
-                Add at least one hobby. This is how you'll be matched with others.
+                Add at least three hobbies. This is used to find matches with overlapping interests.
             </Text>
 
             {hobbies.length > 0 && (
@@ -51,8 +51,9 @@ export const OnboardingHobbiesStep = ({initialValue, onComplete, isSubmitting}: 
                             key={h.name}
                             onClose={() => handleRemove(h.name)}
                             style={styles.chip}
+                            textStyle={{color: theme.colors.tertiaryDark}}
                         >
-                            <Text>{h.name} · {h.experienceLevel}</Text>
+                            {h.name} · {h.experienceLevel}
                         </Chip>
                     ))}
                 </View>
@@ -64,16 +65,16 @@ export const OnboardingHobbiesStep = ({initialValue, onComplete, isSubmitting}: 
                 onPress={() => setShowForm(true)}
                 disabled={isSubmitting || globalHobbiesLoading}
             >
-                <Text>Add Hobby</Text>
+                Add Hobby
             </Button>
 
             <Button
                 mode="contained"
                 onPress={handleContinue}
-                disabled={hobbies.length === 0 || isSubmitting}
+                disabled={hobbies.length < 3 || isSubmitting}
                 style={styles.button}
             >
-                <Text>Continue</Text>
+                Continue
             </Button>
 
             <Portal>
@@ -87,6 +88,7 @@ export const OnboardingHobbiesStep = ({initialValue, onComplete, isSubmitting}: 
                         onSubmit={async req => handleAdd(req as HobbyCreationRequest)}
                         onDismiss={() => setShowForm(false)}
                         isSubmitting={false}
+                        excludeNames={hobbies.map(h => h.name)}
                     />
                 </Modal>
             </Portal>
@@ -98,10 +100,10 @@ const styles = StyleSheet.create({
     container: {gap: spacing.lg},
     description: commonStyles.fieldLabel,
     chipRow: commonStyles.chipRow,
-    chip: {backgroundColor: theme.colors.surfaceInput},
+    chip: {backgroundColor: theme.colors.tertiaryLight, borderColor: theme.colors.tertiary},
     button: {marginTop: spacing.sm},
     modal: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: theme.colors.onPrimary,
         margin: spacing.xxl,
         borderRadius: 12,
         padding: spacing.xxl,

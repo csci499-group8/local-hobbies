@@ -113,4 +113,5 @@ export interface MutualMatchResponse {
     notes: string | null;
     /** ISO 8601 UTC timestamp */
     mutualMatchTime: string;
+    contactInfo: string;
 }

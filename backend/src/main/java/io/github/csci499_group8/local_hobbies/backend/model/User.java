@@ -57,8 +57,8 @@ public class User {
     @Column(name = "location_approximate")
     private String locationApproximate;
 
-    @Column(name = "public_contact_info")
-    private String publicContactInfo;
+    @Column(name = "contact_info")
+    private String contactInfo;
 
     @Column(name = "profile_photo_key")
     private String profilePhotoKey;

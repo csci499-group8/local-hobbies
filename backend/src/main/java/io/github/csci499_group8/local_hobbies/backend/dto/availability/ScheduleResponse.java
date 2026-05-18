@@ -7,8 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
- * Lists of all of a user's Availability objects, and the flattened AvailabilityIntervals
- * they are projected to
+ * Lists of all of a user's Availability objects from the previous day onwards
+ * (one day grace period), and the flattened AvailabilityIntervals
+ * they are projected to from today onwards (no grace period)
  */
 public record ScheduleResponse(
         @NotNull List<AvailabilityIntervalResponse> intervals, //may be empty

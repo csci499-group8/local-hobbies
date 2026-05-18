@@ -37,15 +37,6 @@ apiClient.interceptors.request.use(config => {
     return config;
 });
 
-apiClient.interceptors.request.use(async (config) => {
-    const token = await SecureStore.getItemAsync(SECURE_STORE_KEYS.ACCESS_TOKEN);
-    console.log('Token from SecureStore:', token ? 'found' : 'null');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
-
 // request interceptor
 apiClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {

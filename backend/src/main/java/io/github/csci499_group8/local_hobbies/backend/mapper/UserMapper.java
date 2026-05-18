@@ -46,7 +46,7 @@ public abstract class UserMapper {
     @Mapping(target = "birthDate", expression = "java(jsonNullableMapper.unwrap(request.birthDate(), user.getBirthDate()))")
     @Mapping(target = "locationPoint", expression = "java(jsonNullableMapper.unwrap(request.location(), user.getLocationPoint(), locationMapper::mapGeoJsonPointToPoint))")
     @Mapping(target = "locationApproximate", source = "locationApproximate")
-    @Mapping(target = "publicContactInfo", expression = "java(jsonNullableMapper.unwrap(request.publicContactInfo(), user.getPublicContactInfo()))")
+    @Mapping(target = "contactInfo", expression = "java(jsonNullableMapper.unwrap(request.contactInfo(), user.getContactInfo()))")
     @Mapping(target = "genderMatched", expression = "java(jsonNullableMapper.unwrap(request.genderMatched(), user.getGenderMatched()))")
     @Mapping(target = "showAge", expression = "java(jsonNullableMapper.unwrap(request.showAge(), user.getShowAge()))")
     @Mapping(target = "showGenderDisplayed", expression = "java(jsonNullableMapper.unwrap(request.showGenderDisplayed(), user.getShowGenderDisplayed()))")
@@ -66,7 +66,7 @@ public abstract class UserMapper {
     @Mapping(target = "bio", expression = "java(jsonNullableMapper.unwrap(request.bio(), user.getBio()))")
     @Mapping(target = "locationPoint", expression = "java(jsonNullableMapper.unwrap(request.location(), user.getLocationPoint(), locationMapper::mapGeoJsonPointToPoint))")
     @Mapping(target = "locationApproximate", source = "locationApproximate")
-    @Mapping(target = "publicContactInfo", expression = "java(jsonNullableMapper.unwrap(request.publicContactInfo(), user.getPublicContactInfo()))")
+    @Mapping(target = "contactInfo", expression = "java(jsonNullableMapper.unwrap(request.contactInfo(), user.getContactInfo()))")
     @Mapping(target = "profilePhotoKey", expression = "java(jsonNullableMapper.unwrap(request.profilePhotoKey(), user.getProfilePhotoKey()))")
     @Mapping(target = "genderMatched", expression = "java(jsonNullableMapper.unwrap(request.genderMatched(), user.getGenderMatched()))")
     @Mapping(target = "showAge", expression = "java(jsonNullableMapper.unwrap(request.showAge(), user.getShowAge()))")
@@ -91,9 +91,10 @@ public abstract class UserMapper {
     @Mapping(target = "age", expression = "java(mapAge(otherUser))")
     @Mapping(target = "genderDisplayed", expression = "java(mapGenderDisplayed(otherUser))")
     @Mapping(target = "profilePhotoUrl", source = "profilePhotoUrl", qualifiedByName = "useResolveUrl")
+    @Mapping(target = "contactInfo", expression = "java(isMutualMatch ? otherUser.getContactInfo() : null)")
     public abstract OtherUserProfileResponse toOtherProfileResponse(
             User otherUser, String profilePhotoUrl, List<HobbyResponse> hobbies,
-            List<HobbyPhotoResponse> hobbyPhotos, boolean isSavedMatch,
+            List<HobbyPhotoResponse> hobbyPhotos, boolean isSavedMatch, boolean isMutualMatch,
             List<HobbyOverlapResponse> overlappingHobbies,
             List<AvailabilityOverlapResponse> overlappingAvailabilities);
 

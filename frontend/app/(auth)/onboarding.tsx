@@ -19,7 +19,7 @@ const STEPS = [
     OnboardingSectionName.Name,
     OnboardingSectionName.BirthDate,
     OnboardingSectionName.Location,
-    OnboardingSectionName.PublicContactInfo,
+    OnboardingSectionName.ContactInfo,
     OnboardingSectionName.GenderMatched,
     //showAge and ShowGenderDisplayed are grouped as "Privacy" because the two are too thin for separate steps
     OnboardingSectionName.ShowAge,
@@ -31,7 +31,7 @@ const STEP_TITLES: Record<typeof STEPS[number], string> = {
     [OnboardingSectionName.Name]: 'What\'s your name?',
     [OnboardingSectionName.BirthDate]: 'When were you born?',
     [OnboardingSectionName.Location]: 'Where are you based?',
-    [OnboardingSectionName.PublicContactInfo]: 'How can people reach you?',
+    [OnboardingSectionName.ContactInfo]: 'How can people reach you?',
     [OnboardingSectionName.GenderMatched]: 'What gender do you want to use in searches?',
     [OnboardingSectionName.ShowAge]: 'Privacy settings',
     [OnboardingSectionName.Hobbies]: 'What are your hobbies?',
@@ -123,11 +123,9 @@ export default function OnboardingScreen() {
 
     return (
         <KeyboardAvoidingView
-            style={styles.flex}
+            style={styles.screen}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.screen}>
-
                 {/* Header */}
                 <View style={styles.header}>
                     <ProgressBar progress={progress} style={styles.progress} />
@@ -165,10 +163,10 @@ export default function OnboardingScreen() {
                             isSubmitting={isSubmitting}
                         />
                     )}
-                    {currentStep === OnboardingSectionName.PublicContactInfo && (
+                    {currentStep === OnboardingSectionName.ContactInfo && (
                         <OnboardingContactStep
-                            initialValue={draft.publicContactInfo}
-                            onComplete={publicContactInfo => handleStepComplete({publicContactInfo})}
+                            initialValue={draft.contactInfo}
+                            onComplete={contactInfo => handleStepComplete({contactInfo})}
                             isSubmitting={isSubmitting}
                         />
                     )}
@@ -214,20 +212,17 @@ export default function OnboardingScreen() {
                             onPress={handleBack}
                             disabled={isSubmitting}
                         >
-                            <Text>Back</Text>
+                            Back
                         </Button>
                     </View>
                 )}
-
-            </View>
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    flex: {flex: 1},
-    screen: {flex: 1, backgroundColor: '#f8f9fa'},
-    header: {padding: 24, paddingBottom: 16, gap: 8, backgroundColor: '#fff'},
+    screen: {flex: 1},
+    header: {padding: 24, paddingBottom: 16, gap: 8},
     overviewContainer: {flexGrow: 1, padding: 24, justifyContent: 'center', gap: 8},
     progress: {height: 4, borderRadius: 2},
     stepCount: {opacity: 0.5},

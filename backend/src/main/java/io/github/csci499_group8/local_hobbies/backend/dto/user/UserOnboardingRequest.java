@@ -18,10 +18,12 @@ public record UserOnboardingRequest(
     @NotNullIfPresent JsonNullable<String> name,
     @NotNullIfPresent JsonNullable<LocalDate> birthDate,
     @NotNullIfPresent @Valid JsonNullable<GeoJsonPoint> location,
-    @NotNullIfPresent JsonNullable<String> publicContactInfo,
+    @NotNullIfPresent JsonNullable<String> contactInfo,
     @NotNullIfPresent JsonNullable<UserGenderMatched> genderMatched,
     @NotNullIfPresent JsonNullable<Boolean> showAge,
     @NotNullIfPresent JsonNullable<Boolean> showGenderDisplayed,
     @NotNullIfPresent @Valid JsonNullable<List<HobbyCreationRequest>> hobbies,
     @NotNullIfPresent @Valid JsonNullable<AvailabilityOnboardingRequests> availabilities
-) {}
+) {
+    //TODO: prevent request from being submitted if birthdate indicates <18y old, <3 hobbies, <1 availability, name and contact info strings are unsafe (check only if fields are present)
+}

@@ -22,8 +22,7 @@ export const OnboardingLocationStep = ({initialValue, onComplete, isSubmitting}:
     return (
         <View style={styles.container}>
             <Text variant="bodyMedium" style={styles.description}>
-                Your approximate location is shown to other users to help them find nearby matches.
-                Your exact location is never shared.
+                Your approximate location is shown on your profile. Your exact location is never shared.
             </Text>
 
             <Button
@@ -42,7 +41,7 @@ export const OnboardingLocationStep = ({initialValue, onComplete, isSubmitting}:
                     disabled={isSubmitting}
                     style={styles.button}
                 >
-                    <Text>Continue</Text>
+                    Continue
                 </Button>
             )}
 

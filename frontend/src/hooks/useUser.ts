@@ -3,6 +3,7 @@ import userService from '@/src/api/services/user-service';
 import {UserUpdateRequest} from '@/src/types/user';
 import {performTwoStepUpload} from '@/src/api/services/upload-service';
 import {UserProfileUpdateRequest, UserSettingsUpdateRequest} from '@/src/types/ui/user';
+import {homepageKeys} from '@/src/hooks/useHomepage';
 
 export const userKeys = {
     all: ['user'] as const,
@@ -36,7 +37,7 @@ export const useUser = () => {
                 genderDisplayed: updates.genderDisplayed,
                 bio: updates.bio,
                 location: updates.location,
-                publicContactInfo: updates.publicContactInfo,
+                contactInfo: updates.contactInfo,
             };
 
             if (updates.photo) {
@@ -55,6 +56,8 @@ export const useUser = () => {
 
             //profile contains non-user state, so better to invalidate
             queryClient.invalidateQueries({queryKey: userKeys.currentUserProfile()});
+            //homepage contains user state, so invalidate
+            queryClient.invalidateQueries({queryKey: homepageKeys.all});
         },
     });
 

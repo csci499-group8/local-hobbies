@@ -72,6 +72,7 @@ export const SavedMatchForm = (props: Props) => {
                                 multiline
                                 numberOfLines={3}
                                 disabled={props.isSubmitting}
+                                style={commonStyles.lightBackground}
                                 maxLength={NOTES_MAX_LENGTH}
                                 right={
                                     <TextInput.Affix
@@ -93,7 +94,7 @@ export const SavedMatchForm = (props: Props) => {
                         disabled={props.isSubmitting}
                         style={styles.footerButton}
                     >
-                        <Text>Cancel</Text>
+                        Cancel
                     </Button>
                     <Button
                         mode="contained"
