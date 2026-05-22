@@ -48,7 +48,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             String uri = request.getRequestURI();
             boolean isOnboardingExempt =
-                uri.equals("/api/auth/login")
+                uri.equals("/api/health")
+                    || uri.equals("/api/auth/login")
                     || uri.equals("/api/auth/signup")
                     || uri.equals("/api/auth/refresh")
                     || uri.equals("/api/users/onboarding")
