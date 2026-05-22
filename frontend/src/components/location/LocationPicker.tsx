@@ -11,7 +11,9 @@ import {colors, commonStyles, spacing, theme} from '@/src/theme';
 // Using the REST API directly avoids the expo-location permission requirement
 // that would otherwise block reverse geocoding even when location access is denied.
 const GOOGLE_MAPS_API_KEY: string =
-    Constants.expoConfig?.android?.config?.googleMaps?.apiKey ?? '';
+    Constants.expoConfig?.android?.config?.googleMaps?.apiKey ??
+    Constants.expoConfig?.ios?.config?.googleMapsApiKey ??
+    '';
 
 interface Props {
     initialLocation?: GeoJsonPoint;
