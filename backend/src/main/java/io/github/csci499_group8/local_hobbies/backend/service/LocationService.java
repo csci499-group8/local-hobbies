@@ -22,7 +22,11 @@ public class LocationService {
 
     private final GeoApiContext geoApiContext;
 
-    private static final TimeZoneEngine TIME_ZONE_ENGINE = TimeZoneEngine.initialize();
+    //for Render free tier, which has only 512MB of RAM:
+    //only load timezone data for the contiguous US instead of the entire world
+    TimeZoneEngine TIME_ZONE_ENGINE = TimeZoneEngine.initialize(24.0, -125.0, 50.0, -66.0, false);
+
+//    private static final TimeZoneEngine TIME_ZONE_ENGINE = TimeZoneEngine.initialize();
 
     public String getCityFromGeoJsonPoint(GeoJsonPoint point) {
         if (point == null || point.coordinates().size() < 2) {
