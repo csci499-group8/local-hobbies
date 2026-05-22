@@ -1,7 +1,7 @@
 import React, {useMemo, useState} from 'react';
 import {FlatList, Platform, StyleSheet, View} from 'react-native';
 import {Button, Divider, List, Modal, Portal, Surface, Text, useTheme} from 'react-native-paper';
-import MapView, {Marker} from 'react-native-maps';
+import MapView from 'react-native-maps';
 import {DateTime} from 'luxon';
 import {AvailabilityType, AvailabilityIntervalResponse, AvailabilityOverlapResponse} from '@/src/types/availability';
 import {GeoJsonPoint} from '@/src/types/common';
